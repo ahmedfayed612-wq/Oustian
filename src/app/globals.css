@@ -1,0 +1,194 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   Oustians design tokens
+   ----------------------------------------------------------------------------
+   Palette source: the OUST brand mark (geometric peak in gold/tan + deep teal
+   lettering). Values below are approximations until the official logo file is
+   dropped in — change them here only, never in components.
+
+   `--brand`   primary action color (deep teal)
+   `--accent`  gold, used sparingly (active indicators, "Going", badges)
+   `--*-ink`   WCAG-AA readable counterparts of the decorative fills above
+   `--on-*`    text colors that sit on top of the matching fill
+   ========================================================================== */
+
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant rtl (&:where([dir="rtl"], [dir="rtl"] *));
+@custom-variant ltr (&:where([dir="ltr"], [dir="ltr"] *));
+
+:root {
+  color-scheme: light;
+
+  /* palette */
+  --brand: #0f5c6b;
+  --accent: #b99a5b;
+  --bg: #faf8f4;
+  --surface: #ffffff;
+  --text: #12262b;
+  --muted: #6b7f84;
+  --danger: #d0453b;
+
+  /* derived surfaces + lines */
+  --border: #e9e2d7;
+  --border-strong: #d5cbbc;
+  --brand-soft: #e7f0f1;
+  --accent-soft: #f5efe1;
+  --danger-soft: #fbeae8;
+  --overlay: rgb(18 38 43 / 0.45);
+
+  /* accessible inks (gold/danger are decorative — these are the text-safe ones) */
+  --muted-ink: #5e7277;
+  --accent-ink: #7a6432;
+  --on-brand: #ffffff;
+  --on-accent: #2c2413;
+  --on-danger: #ffffff;
+  --ring: var(--brand);
+  --shadow-color: 18 38 43;
+
+  /* font stacks live outside @theme so the next/font variables (declared on
+     <html>) resolve here; the two stacks mirror each other for mixed content */
+  --font-latin-stack:
+    var(--font-jakarta), var(--font-plex-arabic), ui-sans-serif, system-ui,
+    sans-serif;
+  --font-arabic-stack:
+    var(--font-plex-arabic), var(--font-jakarta), ui-sans-serif, system-ui,
+    sans-serif;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --brand: #3fa3b5;
+  --accent: #d2b676;
+  --bg: #0c1517;
+  --surface: #142125;
+  --text: #eaf1f2;
+  --muted: #8fa5aa;
+  --danger: #ef6a60;
+
+  --border: #24383e;
+  --border-strong: #345560;
+  --brand-soft: #133239;
+  --accent-soft: #2b2517;
+  --danger-soft: #3a1f1d;
+  --overlay: rgb(3 9 10 / 0.66);
+
+  --muted-ink: #9db2b6;
+  --accent-ink: #d2b676;
+  --on-brand: #04252b;
+  --on-accent: #2c2413;
+  --on-danger: #2b0b08;
+  --ring: var(--brand);
+  --shadow-color: 0 0 0;
+}
+
+@theme inline {
+  /* colors */
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-text: var(--text);
+  --color-muted: var(--muted-ink);
+  --color-muted-decor: var(--muted);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-on-brand: var(--on-brand);
+  --color-on-accent: var(--on-accent);
+  --color-on-danger: var(--on-danger);
+  --color-overlay: var(--overlay);
+  --color-ring: var(--ring);
+
+  /* shape — rounded cards (16-20px), pill chips */
+  --radius-card: 1.125rem;
+  --radius-card-lg: 1.25rem;
+  --radius-control: 0.875rem;
+  --radius-pill: 9999px;
+
+  /* soft, low-contrast shadows */
+  --shadow-soft:
+    0 1px 2px rgb(var(--shadow-color) / 0.05),
+    0 8px 20px -12px rgb(var(--shadow-color) / 0.16);
+  --shadow-lift:
+    0 2px 4px rgb(var(--shadow-color) / 0.06),
+    0 16px 32px -16px rgb(var(--shadow-color) / 0.24);
+
+  /* type */
+  --font-sans: var(--font-latin-stack);
+  --font-arabic: var(--font-arabic-stack);
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.65;
+
+  /* motion — 150-250ms ease-out */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --default-transition-duration: 200ms;
+  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  /* Tailwind v4 defaults borders to currentColor; keep the v3 behaviour so a
+     bare `border` utility picks up the token color */
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-latin-stack);
+    font-size: 1rem;
+    min-height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Arabic UI gets the Arabic-first stack (its Latin glyphs are fine too) */
+  :root[lang="ar"] body {
+    font-family: var(--font-arabic-stack);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--brand-soft);
+  }
+
+  /* respect the OS setting — no decorative motion for these users */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@utility pb-safe {
+  /* keeps the mobile bottom nav clear of the home indicator */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}

@@ -1,0 +1,82 @@
+{
+  "Metadata": {
+    "title": "Oustians",
+    "description": "The private student app for Obour University for Science and Technology. Meet people, share moments, plan meetups and chat — in Arabic and English."
+  },
+  "Brand": {
+    "name": "Oustians",
+    "tagline": "Your campus, your people.",
+    "homeLabel": "Oustians — go to home"
+  },
+  "Common": {
+    "skipToContent": "Skip to content",
+    "comingSoon": "Coming soon"
+  },
+  "Nav": {
+    "label": "Main navigation",
+    "home": "Home",
+    "events": "Events",
+    "create": "Create",
+    "chat": "Chat",
+    "profile": "Profile"
+  },
+  "TopBar": {
+    "notifications": "Notifications"
+  },
+  "Theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "switchTo": "Switch to {theme}"
+  },
+  "Locale": {
+    "other": "العربية",
+    "switchTo": "Switch to Arabic"
+  },
+  "Home": {
+    "heroTitle": "Welcome to Oustians",
+    "heroBody": "A private space for OUST students — share moments, plan meetups and talk to your people, without the noise.",
+    "statusTitle": "You're early",
+    "statusBody": "Sign-up, the feed, events, polls and chat are all being built right now. What you see is the app shell: same layout on your phone, dark mode and Arabic included.",
+    "languageTitle": "Arabic and English, from day one",
+    "languageBody": "Switch language from the top bar any time — the whole layout flips, navigation included.",
+    "privacyTitle": "Campus-only, always",
+    "privacyBody": "Every account is approved by hand, so your feed stays full of real OUST students."
+  },
+  "Placeholder": {
+    "events": {
+      "title": "Events are on the way",
+      "description": "Soon you'll create a meetup, invite your connections and see who's going."
+    },
+    "chat": {
+      "title": "Chat is on the way",
+      "description": "Real-time conversations, photo messages and message requests that keep strangers out."
+    },
+    "create": {
+      "title": "Sharing starts here",
+      "description": "Text posts, photos, polls and events will all be created from this screen."
+    },
+    "profile": {
+      "title": "Your profile is coming",
+      "description": "Your photos, your posts and your connections will live here."
+    },
+    "settings": {
+      "title": "Settings are coming",
+      "description": "Language, theme, account privacy, who can message you and blocked accounts — all in one place."
+    },
+    "notifications": {
+      "title": "No notifications yet",
+      "description": "Connection requests, likes, comments and event updates will show up here."
+    },
+    "admin": {
+      "title": "Admin tools",
+      "description": "Approve new students, manage invite codes and review reports — visible to admins only."
+    }
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "The link may be old, or the page moved. Let's get you back to the feed.",
+    "cta": "Back to home"
+  }
+}

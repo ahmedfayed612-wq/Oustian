@@ -1,0 +1,38 @@
+import { cn } from "@/lib/utils/cn";
+
+type SpinnerProps = {
+  className?: string;
+  /** Screen-reader text. Omit for purely decorative spinners. */
+  label?: string;
+};
+
+/** Small indeterminate spinner used by buttons and loading panels. */
+export function Spinner({ className, label }: SpinnerProps) {
+  return (
+    <>
+      <svg
+        className={cn("size-4 animate-spin", className)}
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <circle
+          cx="12"
+          cy="12"
+          r="9"
+          stroke="currentColor"
+          strokeOpacity="0.25"
+          strokeWidth="3"
+        />
+        <path
+          d="M21 12a9 9 0 0 0-9-9"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+      </svg>
+      {label ? <span className="sr-only">{label}</span> : null}
+    </>
+  );
+}
