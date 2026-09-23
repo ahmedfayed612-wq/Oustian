@@ -10,14 +10,18 @@ import { z } from "zod";
 const envSchema = z.object({
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse({
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || undefined,
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || undefined,
-  NEXT_PUBLIC_SUPABASE_ANON_KEY:
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || undefined,
+  // Supabase renamed the legacy anon key (`eyJ…`) to a publishable key
+  // (`sb_publishable_…`). Accept both names so either .env file works.
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    undefined,
 });
 
 if (!parsed.success) {
@@ -30,7 +34,8 @@ if (!parsed.success) {
 export const env = {
   siteUrl: parsed.data.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   supabaseUrl: parsed.data.NEXT_PUBLIC_SUPABASE_URL,
-  supabaseAnonKey: parsed.data.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  /** Publishable key (formerly "anon key"). Safe to expose to the browser. */
+  supabaseAnonKey: parsed.data.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
 } as const;
 
 export const isSupabaseConfigured = Boolean(
@@ -45,7 +50,8 @@ export function requireSupabaseConfig(): { url: string; anonKey: string } {
   if (!env.supabaseUrl || !env.supabaseAnonKey) {
     throw new Error(
       "Supabase is not configured. Copy .env.example to .env.local and set " +
-        "NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+        "NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY " +
+        "(or the legacy NEXT_PUBLIC_SUPABASE_ANON_KEY).",
     );
   }
 
