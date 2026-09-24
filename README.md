@@ -3,9 +3,11 @@
 The private social app for **Obour University for Science and Technology (OUST)**.
 Campus-only, bilingual (Arabic RTL + English LTR), mobile-first, installable.
 
-> **Status: M0, M0.5 and M1 complete** — foundation, OUST brand/shell, and auth
-> (invite codes, approval flow, profiles, admin queue). Feed, connections,
-> events and chat land in the milestones listed at the bottom of this file.
+> **Status: M0 → M6 core screens are live** — foundation, OUST brand/shell,
+> auth with invite codes + approval, realtime chat, member profiles with
+> privacy + search, the feed (posts, likes, comments), events with RSVP,
+> notifications and settings. Polls, connections and launch polish remain
+> (see Milestones).
 
 ---
 
@@ -67,7 +69,7 @@ src/
     fonts.ts             # Plus Jakarta Sans + IBM Plex Sans Arabic
   components/
     brand/               # BrandMark (peak + Oustians), UniversityLogo (OUST lockup)
-    feed/                # FeedComposer, FeedPlaceholder (real feed lands in M3)
+    feed/                # FeedComposer (PostCard, composer live in features/feed)
     layout/              # AppShell, TopBar, SideNav, RightRail, BottomNav
     theme/               # ThemeProvider, ThemeToggle
     ui/                  # Button, IconButton, Card, Chip, Avatar, Skeleton, EmptyState
@@ -202,10 +204,18 @@ in-memory state, no migrations during build (Vercel rule since M1).
 - [x] **M1 Auth & profiles** — profiles/invite-code migrations, sign-up with
       invite code, profile setup, pending approval, admin approval, Postgres
       rate limiting, avatar storage (browser → Supabase direct)
-- [ ] **M2 Connections** — requests, blocks, search, private profiles
-- [ ] **M3 Feed** — posts, media, likes, comments, visibility RLS + RLS tests
-- [ ] **M4 Polls** · **M5 Events** · **M6 Chat** · **M7 Notifications, reports,
-      admin** · **M8 Polish & launch (PWA, QA, seed data)**
+- [ ] **M2 Connections** — requests and blocks still pending; member search
+      and private profiles shipped alongside M1
+- [x] **M3 Feed** — text posts, likes, comments, campus-only visibility RLS
+      (media posts and the RLS test suite are follow-ups)
+- [ ] **M4 Polls**
+- [x] **M5 Events** — member-created events with RSVP (editing and reminders
+      are follow-ups)
+- [x] **M6 Chat** — 1:1 threads, unread counts, Supabase Realtime subscribed
+      from the browser (no socket server on Vercel)
+- [ ] **M7 Notifications, reports, admin** — notifications (likes/comments on
+      your posts) shipped; reports still outstanding; admin panel shipped in M1
+- [ ] **M8 Polish & launch (PWA, QA, seed data)**
 
 ## Assumptions & decisions (logged per milestone)
 

@@ -39,14 +39,20 @@
     "placeholder": "What's on your mind?",
     "photo": "Photo",
     "event": "Event",
-    "poll": "Poll"
+    "poll": "Poll",
+    "title": "Create post",
+    "hint": "Visible to every approved OUST student.",
+    "empty": "Write something before publishing.",
+    "publish": "Publish",
+    "publishing": "Publishing…",
+    "cancel": "Cancel",
+    "failed": "Couldn't publish your post — please try again.",
+    "counter": "{count, number} / 5000"
   },
   "Feed": {
     "title": "Feed",
-    "badge": "In progress",
-    "placeholderTitle": "Your campus feed is being built",
-    "placeholderBody": "Posts, photos, likes and comments arrive with the next milestone. The layout below is final — only the content is missing.",
-    "actionsLabel": "Post actions: like, comment and share"
+    "emptyTitle": "Your feed is quiet",
+    "emptyBody": "Be the first to share something with campus."
   },
   "Rail": {
     "suggestionsTitle": "People you may know",
@@ -226,6 +232,21 @@
     "activate": "Activate",
     "deactivate": "Deactivate"
   },
+  "Settings": {
+    "title": "Settings",
+    "description": "Appearance, language and your account.",
+    "appearance": "Appearance",
+    "appearanceHint": "Light, dark or follow your device.",
+    "language": "Language",
+    "languageHint": "Switch between English and العربية.",
+    "privacy": "Privacy",
+    "privacyHint": "Hide your bio, faculty and year from other members.",
+    "editProfile": "Edit",
+    "admin": "Admin",
+    "adminHint": "Approve members and manage invite codes.",
+    "openAdmin": "Open panel",
+    "signOut": "Sign out"
+  },
   "Theme": {
     "label": "Theme",
     "light": "Light",
@@ -267,35 +288,57 @@
       "invalid_conversation": "You can't message this member"
     }
   },
-  "Placeholder": {
-    "events": {
-      "title": "Events are on the way",
-      "description": "Soon you'll create a meetup, invite your connections and see who's going."
-    },
-    "chat": {
-      "title": "Chat is on the way",
-      "description": "Real-time conversations, photo messages and message requests that keep strangers out."
-    },
-    "create": {
-      "title": "Sharing starts here",
-      "description": "Text posts, photos, polls and events will all be created from this screen."
-    },
-    "profile": {
-      "title": "Your profile is coming",
-      "description": "Your photos, your posts and your connections will live here."
-    },
-    "settings": {
-      "title": "Settings are coming",
-      "description": "Language, theme, account privacy, who can message you and blocked accounts — all in one place."
-    },
-    "notifications": {
-      "title": "No notifications yet",
-      "description": "Connection requests, likes, comments and event updates will show up here."
-    },
-    "admin": {
-      "title": "Admin tools",
-      "description": "Approve new students, manage invite codes and review reports — visible to admins only."
+  "Post": {
+    "like": "Like",
+    "liked": "Liked",
+    "comment": "Comment",
+    "hideComments": "Hide comments",
+    "delete": "Delete post",
+    "deleteConfirm": "Delete this post for everyone?",
+    "likesSummary": "{count, plural, one {# like} other {# likes}}",
+    "commentsSummary": "{count, plural, one {# comment} other {# comments}}",
+    "noComments": "No comments yet",
+    "writeComment": "Write a comment…",
+    "sendComment": "Comment",
+    "commentTooLong": "Comments can be up to 1000 characters",
+    "commentFailed": "Couldn't post your comment — please try again."
+  },
+  "Events": {
+    "metaTitle": "Events",
+    "title": "Events",
+    "description": "Campus events, meetups and deadlines.",
+    "create": "Create event",
+    "emptyTitle": "No upcoming events",
+    "emptyBody": "Study groups, club meetups, deadlines — create the first one.",
+    "until": "until {end}",
+    "rsvp": "Join · {count}",
+    "goingLabel": "Going · {count}",
+    "formTitle": "New event",
+    "formHint": "Visible to every approved OUST student.",
+    "name": "Title",
+    "namePlaceholder": "e.g. Final-year study session",
+    "location": "Location",
+    "locationPlaceholder": "e.g. Library, floor 2",
+    "descriptionLabel": "Description",
+    "startsAt": "Starts",
+    "endsAt": "Ends (optional)",
+    "publish": "Create event",
+    "publishing": "Creating…",
+    "cancel": "Cancel",
+    "errors": {
+      "invalid": "Check the details — the title needs at least 3 characters and the end must be after the start.",
+      "failed": "Couldn't create the event — please try again."
     }
+  },
+  "Notifications": {
+    "title": "Notifications",
+    "description": "Likes and comments on your posts.",
+    "emptyTitle": "Nothing yet",
+    "emptyBody": "When someone likes or comments on your post, it shows up here.",
+    "liked": "{name} liked your post",
+    "commented": "{name} commented on your post",
+    "onYourPost": "“{snippet}”",
+    "someone": "Someone"
   },
   "NotFound": {
     "title": "Page not found",
