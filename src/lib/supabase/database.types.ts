@@ -27,95 +27,205 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           expires_at: string | null;
-          used_at: string | null;
-          used_by: string | null;
+          id: string;
+          is_active: boolean;
+          label: string | null;
+          max_uses: number;
+          updated_at: string;
+          uses: number;
         };
         Insert: {
           code: string;
           created_at?: string;
           created_by?: string | null;
           expires_at?: string | null;
-          used_at?: string | null;
-          used_by?: string | null;
+          id?: string;
+          is_active?: boolean;
+          label?: string | null;
+          max_uses?: number;
+          updated_at?: string;
+          uses?: number;
         };
         Update: {
           code?: string;
           created_at?: string;
           created_by?: string | null;
           expires_at?: string | null;
-          used_at?: string | null;
-          used_by?: string | null;
+          id?: string;
+          is_active?: boolean;
+          label?: string | null;
+          max_uses?: number;
+          updated_at?: string;
+          uses?: number;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "invite_codes_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      invite_code_uses: {
+        Row: {
+          id: string;
+          invite_code_id: string;
+          used_at: string;
+          user_id: string;
+        };
+        Insert: {
+          id?: string;
+          invite_code_id: string;
+          used_at?: string;
+          user_id: string;
+        };
+        Update: {
+          id?: string;
+          invite_code_id?: string;
+          used_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invite_code_uses_invite_code_id_fkey";
+            columns: ["invite_code_id"];
+            isOneToOne: false;
+            referencedRelation: "invite_codes";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       profiles: {
         Row: {
-          avatar_url: string | null;
+          approved_at: string | null;
+          approved_by: string | null;
+          avatar_path: string | null;
           bio: string | null;
+          cover_path: string | null;
           created_at: string;
           faculty: string | null;
           full_name: string;
+          graduation_year: number | null;
           id: string;
-          is_approved: boolean;
-          is_private: boolean;
-          language: Database["public"]["Enums"]["app_language"];
-          message_permission: Database["public"]["Enums"]["message_permission"];
+          invite_code_id: string | null;
+          language: string;
+          rejection_reason: string | null;
           role: Database["public"]["Enums"]["account_role"];
-          study_year: number | null;
+          status: Database["public"]["Enums"]["account_status"];
+          updated_at: string;
           username: string;
+          verification_method: Database["public"]["Enums"]["verification_method"];
         };
         Insert: {
-          avatar_url?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          avatar_path?: string | null;
           bio?: string | null;
+          cover_path?: string | null;
           created_at?: string;
           faculty?: string | null;
           full_name: string;
+          graduation_year?: number | null;
           id: string;
-          is_approved?: boolean;
-          is_private?: boolean;
-          language?: Database["public"]["Enums"]["app_language"];
-          message_permission?: Database["public"]["Enums"]["message_permission"];
+          invite_code_id?: string | null;
+          language?: string;
+          rejection_reason?: string | null;
           role?: Database["public"]["Enums"]["account_role"];
-          study_year?: number | null;
+          status?: Database["public"]["Enums"]["account_status"];
+          updated_at?: string;
           username: string;
+          verification_method?: Database["public"]["Enums"]["verification_method"];
         };
         Update: {
-          avatar_url?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          avatar_path?: string | null;
           bio?: string | null;
+          cover_path?: string | null;
           created_at?: string;
           faculty?: string | null;
           full_name?: string;
+          graduation_year?: number | null;
           id?: string;
-          is_approved?: boolean;
-          is_private?: boolean;
-          language?: Database["public"]["Enums"]["app_language"];
-          message_permission?: Database["public"]["Enums"]["message_permission"];
+          invite_code_id?: string | null;
+          language?: string;
+          rejection_reason?: string | null;
           role?: Database["public"]["Enums"]["account_role"];
-          study_year?: number | null;
+          status?: Database["public"]["Enums"]["account_status"];
+          updated_at?: string;
           username?: string;
+          verification_method?: Database["public"]["Enums"]["verification_method"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "profiles_approved_by_fkey";
+            columns: ["approved_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "profiles_invite_code_id_fkey";
+            columns: ["invite_code_id"];
+            isOneToOne: false;
+            referencedRelation: "invite_codes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      rate_limits: {
+        Row: {
+          bucket: string;
+          hits: number;
+          key: string;
+          window_start: string;
+        };
+        Insert: {
+          bucket: string;
+          hits?: number;
+          key: string;
+          window_start: string;
+        };
+        Update: {
+          bucket?: string;
+          hits?: number;
+          key?: string;
+          window_start?: string;
         };
         Relationships: [];
       };
     };
     Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
+    Functions: {
+      consume_rate_limit: {
+        Args: {
+          p_bucket: string;
+          p_key: string;
+          /** Postgres `interval`, e.g. `"10 minutes"`. */
+          p_window: string;
+          p_max: number;
+        };
+        Returns: boolean;
+      };
+      is_admin: {
+        Args: { p_user?: string };
+        Returns: boolean;
+      };
+      is_invite_code_valid: {
+        Args: { p_code: string };
+        Returns: boolean;
+      };
+    };
     Enums: {
-      account_role: "student" | "staff" | "admin";
-      app_language: "ar" | "en";
-      connection_status: "pending" | "accepted" | "declined";
-      conversation_status: "active" | "request";
-      message_permission: "connections" | "everyone";
-      notification_type:
-        | "connection_request"
-        | "connection_accepted"
-        | "like"
-        | "comment"
-        | "event_rsvp"
-        | "message_request";
-      post_audience: "everyone" | "connections";
-      post_type: "text" | "photo" | "poll";
-      report_status: "open" | "reviewed" | "dismissed";
-      rsvp_status: "going" | "maybe";
+      account_role: "student" | "admin";
+      account_status: "pending" | "approved" | "rejected" | "suspended";
+      verification_method:
+        | "invite_code"
+        | "university_email"
+        | "admin_invite"
+        | "manual";
     };
     CompositeTypes: { [_ in never]: never };
   };

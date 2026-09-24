@@ -22,7 +22,8 @@
     "notifications": "الإشعارات",
     "profile": "حسابي",
     "settings": "الإعدادات",
-    "shortcuts": "اختصارات"
+    "shortcuts": "اختصارات",
+    "admin": "الإدارة"
   },
   "Search": {
     "label": "البحث",
@@ -60,6 +61,164 @@
   },
   "TopBar": {
     "notifications": "الإشعارات"
+  },
+  "Auth": {
+    "campusNote": "Oustians لطلبة جامعة العبور بس، وكل حساب بيتم اعتماده يدويًا.",
+    "common": {
+      "working": "جاري التنفيذ…"
+    },
+    "login": {
+      "title": "أهلًا برجوعك",
+      "subtitle": "سجّل دخولك بالإيميل اللي سجّلت بيه.",
+      "email": "الإيميل",
+      "password": "كلمة المرور",
+      "submit": "تسجيل الدخول",
+      "newHere": "أول مرة هنا؟"
+    },
+    "signup": {
+      "title": "انضم لـ Oustians",
+      "subtitle": "محتاج كود دعوة من الجامعة.",
+      "inviteCode": "كود الدعوة",
+      "inviteDescription": "حروف إنجليزية كبيرة وأرقام وشرطات.",
+      "inviteHint": "بنتأكد من الكود أول ما تسيب الخانة.",
+      "inviteValid": "الكود صحيح ولسه مستخدمش.",
+      "fullName": "الاسم بالكامل",
+      "username": "اسم المستخدم",
+      "usernameHint": "من ٣ لـ ٢٤ حرف: a-z و 0-9 وشرطة سفلية. ده اللي الناس هتلاقيك بيه.",
+      "email": "الإيميل الجامعي أو الشخصي",
+      "password": "كلمة المرور",
+      "passwordHint": "٨ أحرف على الأقل.",
+      "faculty": "الكلية",
+      "facultyPlaceholder": "لسه محددتش",
+      "graduationYear": "سنة التخرج",
+      "graduationYearPlaceholder": "لسه محددتش",
+      "submit": "إنشاء الحساب",
+      "haveAccount": "عندك حساب بالفعل؟",
+      "approvalNote": "حسابك بيتراجع من الأدمن قبل ما الفيد يفتح — وهتشوف شاشة الانتظار بعد كده."
+    },
+    "pending": {
+      "metaTitle": "في انتظار الموافقة",
+      "pending": {
+        "title": "فاضل شوية",
+        "body": "شكرًا {name} — حسابك في انتظار موافقة الأدمن. الصفحة دي بتحدّث نفسها."
+      },
+      "rejected": {
+        "title": "الحساب لم يُعتمد",
+        "body": "الأدمن راجع طلبك ومارضيش عليه. تقدر ترد على الدعوة أو تكلم الفريق."
+      },
+      "suspended": {
+        "title": "الحساب موقوف",
+        "body": "الوصول لـ Oustians متوقف للحساب ده."
+      },
+      "refresh": "اتأكد تاني",
+      "autoRefresh": "بنتحقق تلقائيًا كل ٣٠ ثانية",
+      "signOut": "تسجيل الخروج"
+    },
+    "errors": {
+      "invalid_input": "راجع الخانات المحددة.",
+      "too_many_attempts": "محاولات كتير. استنى شوية وجرّب تاني.",
+      "invalid_credentials": "الإيميل أو كلمة المرور غير صحيحة.",
+      "email_in_use": "الإيميل ده له حساب بالفعل.",
+      "invite_code_invalid": "كود الدعوة ده غير معروف.",
+      "invite_code_expired": "كود الدعوة ده انتهت صلاحيته.",
+      "invite_code_exhausted": "الكود ده استُخدم بالعدد المسموح بالكامل.",
+      "invite_code_duplicate": "الكود ده موجود بالفعل.",
+      "invite_code_required": "اكتب كود الدعوة.",
+      "username_taken": "اسم المستخدم ده محجوز — جرّب غيره.",
+      "username_invalid": "اسم المستخدم من ٣ لـ ٢٤ حرف: a-z و 0-9 وشرطة سفلية.",
+      "email_not_confirmed": "افتح إيميل التأكيد الأول قبل تسجيل الدخول.",
+      "signups_disabled": "التسجيل مقفول حاليًا.",
+      "not_authorised": "مالكش صلاحية على ده.",
+      "profile_update_failed": "مقدرناش نحفظ حسابك. جرّب تاني.",
+      "avatar_upload_failed": "الصورة ماترفعتش. جرّب JPG أو PNG أو WebP أقل من ٥ ميجا.",
+      "invite_create_failed": "الكود ماتعملش.",
+      "approval_failed": "القرار ماتحفظش.",
+      "unknown": "حصل خطأ. جرّب تاني."
+    },
+    "success": {
+      "confirm_email": "شوف إيميلك — بعتنالك لينك تأكيد عشان نكمل إنشاء الحساب.",
+      "profile_saved": "تم حفظ الحساب.",
+      "member_approved": "تم اعتماد {name}.",
+      "member_rejected": "لم يتم اعتماد {name}.",
+      "member_suspended": "تم إيقاف الوصول.",
+      "invite_created": "تم حفظ كود الدعوة."
+    },
+    "fields": {
+      "email": "اكتب إيميل صحيح.",
+      "password": "٨ أحرف على الأقل.",
+      "full_name": "اكتب اسمك الحقيقي (٢-٨٠ حرف).",
+      "username": "من ٣ لـ ٢٤ حرف: a-z و 0-9 وشرطة سفلية.",
+      "invite_code": "حروف إنجليزية كبيرة وأرقام وشرطات.",
+      "bio": "خليها أقل من ٢٨٠ حرف."
+    }
+  },
+  "Profile": {
+    "metaTitle": "حسابي",
+    "editTitle": "تعديل الحساب",
+    "edit": "تعديل الحساب",
+    "fullName": "الاسم بالكامل",
+    "username": "اسم المستخدم",
+    "usernameLocked": "اسم المستخدم ثابت حاليًا — كلم الأدمن لو محتاج تغييره.",
+    "faculty": "الكلية",
+    "facultyPlaceholder": "لسه محددتش",
+    "graduationYear": "سنة التخرج",
+    "graduationYearPlaceholder": "لسه محددتش",
+    "memberSince": "انضم في {year}",
+    "bio": "نبذة",
+    "bioHint": "لحد ٢٨٠ حرف.",
+    "emptyBio": "مفيش نبذة لسه.",
+    "languageLabel": "لغة التطبيق",
+    "languageHint": "بتُستخدم في الإيميلات وفي الواجهة بعد تسجيل الدخول.",
+    "language": {
+      "en": "English",
+      "ar": "العربية"
+    },
+    "approvedChip": "طالب معتمد",
+    "adminChip": "أدمن",
+    "postsSoonTitle": "بوستاتك هتظهر هنا",
+    "postsSoonBody": "الفيد جاي في المرحلة الجاية — وبعدها صورك وتصويتاتك وفعالياتك هتظهر في الصفحة دي.",
+    "save": "حفظ التعديلات",
+    "saving": "جاري الحفظ…",
+    "avatar": {
+      "upload": "ارفع صورة",
+      "replace": "غيّر الصورة",
+      "remove": "احذف الصورة",
+      "uploading": "جاري الرفع…",
+      "hint": "JPG أو PNG أو WebP لحد ٥ ميجا. بتتخزن بشكل خاص في Supabase Storage.",
+      "tooLarge": "الصورة أكبر من ٥ ميجا.",
+      "failed": "الصورة ماتحفظتش. جرّب تاني.",
+      "errors": {
+        "not_authorised": "مالكش صلاحية على ده.",
+        "avatar_upload_failed": "الصورة ماترفعتش. جرّب JPG أو PNG أو WebP أقل من ٥ ميجا."
+      }
+    }
+  },
+  "Admin": {
+    "title": "أدوات الإدارة",
+    "pendingCount": "{count} في الانتظار",
+    "codeCount": "{count} كود",
+    "queueTitle": "طلبات الانتظار",
+    "queueBody": "اعتمد الطلبة اللي تعرفهم من الجامعة. الرفض بيطلب سبب، والطالب هيشوفه.",
+    "queueEmpty": "مفيش حاجة للمراجعة — الطلبات فاضية.",
+    "approve": "اعتماد",
+    "reject": "رفض",
+    "rejectReason": "السبب (بيظهر للطالب)",
+    "rejectReasonPlaceholder": "مثال: مقدرتش أطابق بياناتك مع سجلات الطلبة",
+    "rejectConfirm": "تأكيد الرفض",
+    "invitesTitle": "أكواد الدعوة",
+    "invitesBody": "الكود بيتستخدم مرة واحدة إلا لو سمحت بأكتر. اقفله فورًا لو محتاج.",
+    "codeLabel": "الكود",
+    "codeHint": "حروف إنجليزية كبيرة وأرقام وشرطات.",
+    "codeNote": "ملاحظة (اختياري)",
+    "codeMaxUses": "أقصى عدد استخدامات",
+    "createCode": "إنشاء كود",
+    "creating": "جاري الإنشاء…",
+    "codesEmpty": "مفيش أكواد لسه — اعمل أول كود من فوق.",
+    "copy": "انسخ الكود",
+    "codeUses": "استُخدم {used}/{total}",
+    "codeInactive": "مقفول",
+    "activate": "تفعيل",
+    "deactivate": "إيقاف"
   },
   "Theme": {
     "label": "المظهر",

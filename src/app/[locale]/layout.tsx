@@ -3,7 +3,6 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { fontClassNames } from "@/app/fonts";
-import { AppShell } from "@/components/layout/AppShell";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { getDirection, routing } from "@/i18n/routing";
 import { env } from "@/lib/env";
@@ -83,7 +82,7 @@ export default async function LocaleLayout({
       <body className="min-h-dvh antialiased">
         <ThemeProvider>
           <NextIntlClientProvider locale={locale} messages={messages}>
-            <AppShell>{children}</AppShell>
+            {children}
           </NextIntlClientProvider>
         </ThemeProvider>
       </body>

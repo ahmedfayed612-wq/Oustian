@@ -1,11 +1,18 @@
 "use client";
 
+import { ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Avatar } from "@/components/ui/Avatar";
 import { Card } from "@/components/ui/Card";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils/cn";
-import { isNavItemActive, navItems, shortcutNavItems } from "./nav-items";
+import type { ChromeMember } from "./member";
+import {
+  isNavItemActive,
+  navItems,
+  shortcutNavItems,
+  type NavItem,
+} from "./nav-items";
 
 /**
  * Left rail (lg and wider): the member's mini profile card on top, the primary
@@ -13,11 +20,18 @@ import { isNavItemActive, navItems, shortcutNavItems } from "./nav-items";
  * network puts beside the feed. Hidden below `lg`, where the top bar and the
  * bottom bar carry the same links.
  */
-export function SideNav() {
+export function SideNav({ member }: { member: ChromeMember }) {
   const tNav = useTranslations("Nav");
   const tProfile = useTranslations("ProfileCard");
   const tBrand = useTranslations("Brand");
   const pathname = usePathname();
+
+  const shortcuts: readonly NavItem[] = member.isAdmin
+    ? [
+        ...shortcutNavItems,
+        { href: "/admin", labelKey: "admin", Icon: ShieldCheck },
+      ]
+    : shortcutNavItems;
 
   return (
     <aside className="sticky top-[4.5rem] hidden max-h-[calc(100dvh-5.5rem)] w-60 shrink-0 flex-col gap-3 overflow-y-auto pb-4 lg:flex xl:w-64">
@@ -29,16 +43,16 @@ export function SideNav() {
             aria-label={tNav("profile")}
             className="-mt-7 inline-flex rounded-pill ring-2 ring-surface"
           >
-            <Avatar size="lg" />
+            <Avatar size="lg" name={member.fullName} src={member.avatarUrl} />
           </Link>
           <p className="mt-2 truncate text-[0.9375rem] font-semibold text-text">
-            {tProfile("fallbackName")}
+            {member.fullName}
           </p>
           <p className="truncate text-xs text-muted">
-            {tProfile("fallbackHeadline")}
+            {member.headline ?? tProfile("fallbackHeadline")}
           </p>
           <Link
-            href="/profile"
+            href="/profile/edit"
             className="mt-3 flex min-h-10 items-center justify-center rounded-control border border-brand/25 bg-brand-soft px-3 text-sm font-semibold text-brand transition-colors duration-200 ease-out-soft hover:bg-brand-soft/70"
           >
             {tProfile("editProfile")}
@@ -83,7 +97,7 @@ export function SideNav() {
           {tNav("shortcuts")}
         </p>
         <ul className="flex flex-col gap-0.5">
-          {shortcutNavItems.map((item) => {
+          {shortcuts.map((item) => {
             const active = isNavItemActive(pathname, item.href);
 
             return (

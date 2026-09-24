@@ -3,8 +3,9 @@
 The private social app for **Obour University for Science and Technology (OUST)**.
 Campus-only, bilingual (Arabic RTL + English LTR), mobile-first, installable.
 
-> **Status: M0 (foundation) complete.** Auth, feed, events, chat and the admin
-> panel land in the milestones listed at the bottom of this file.
+> **Status: M0, M0.5 and M1 complete** — foundation, OUST brand/shell, and auth
+> (invite codes, approval flow, profiles, admin queue). Feed, connections,
+> events and chat land in the milestones listed at the bottom of this file.
 
 ---
 
@@ -52,9 +53,13 @@ a clear error instead of failing silently.
 src/
   app/
     [locale]/            # every screen lives here (en + ar)
-      layout.tsx         # <html lang dir>, fonts, providers, AppShell
-      page.tsx           # home (becomes the two-tab feed in M3)
-      events|chat|create|profile|settings|notifications|admin/
+      layout.tsx         # <html lang dir>, fonts, providers
+      (auth)/            # login, signup, pending — outside the member shell
+      (app)/             # member screens behind requireApprovedMember()
+        page.tsx         # feed home (real posts land in M3)
+        events|chat|create|notifications|settings|search/
+        profile/         # own profile + profile/edit
+        admin/           # approval queue + invite codes (requireAdmin)
       not-found.tsx      # localized 404
       [...rest]/         # unknown paths inside a locale -> not-found
     global-not-found.tsx # 404 for requests the i18n proxy never matched
@@ -159,12 +164,32 @@ a policy — the UI is never the security boundary. The tricky ones (public vs.
 private posts, blocks, chat request limits, unapproved users) get automated
 tests.
 
-## Deploy
+## Deploy (Vercel)
+
+The build must pass with **only** the dashboard env vars: no local files, no
+in-memory state, no migrations during build (Vercel rule since M1).
 
 1. Push the repo to GitHub and import it in Vercel.
-2. Add the env vars from `.env.example` (Production + Preview).
-3. Add `oustians.com` in Vercel → Domains, then follow the DNS instructions.
-4. Apply migrations to the production project with `npm run db:push`.
+2. Add every variable from `.env.example` under Project → Settings →
+   Environment Variables (Production **and** Preview):
+
+   | Variable                               | Scope           | Notes                                           |
+   | -------------------------------------- | --------------- | ----------------------------------------------- |
+   | `NEXT_PUBLIC_SITE_URL`                 | public          | `https://oustians.com` (prod), localhost (dev)  |
+   | `NEXT_PUBLIC_SUPABASE_URL`             | public          | Dashboard → Project Settings → API              |
+   | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | public          | `sb_publishable_…` (legacy anon key also works) |
+   | `SUPABASE_SERVICE_ROLE_KEY`            | **server-only** | Never expose to the browser                     |
+   | `RATE_LIMIT_SALT`                      | **server-only** | Hashes rate-limit keys (any random string)      |
+
+3. In Supabase → Authentication → URL Configuration:
+   - **Site URL**: `https://oustians.com`
+   - **Redirect URLs**: `https://oustians.com/*`,
+     `https://*.vercel.app/*`, `http://localhost:3000/*`
+4. Add `oustians.com` in Vercel → Domains, then follow the DNS instructions.
+5. Pick a Vercel function region next to the Supabase project region (both
+   currently default to `iad1`).
+6. Apply migrations to the production database with `npm run db:push` —
+   never from the Vercel build.
 
 ## Milestones
 
@@ -174,8 +199,9 @@ tests.
       university logo, `UniversityLogo` lockup, and the social-network shell
       (top-bar tabs + search, left profile rail, centred feed column, right
       suggestions rail, bottom bar on phones)
-- [ ] **M1 Auth & profiles** — profiles/invite-code migrations, sign-up with
-      invite code, profile setup, pending approval, admin approval
+- [x] **M1 Auth & profiles** — profiles/invite-code migrations, sign-up with
+      invite code, profile setup, pending approval, admin approval, Postgres
+      rate limiting, avatar storage (browser → Supabase direct)
 - [ ] **M2 Connections** — requests, blocks, search, private profiles
 - [ ] **M3 Feed** — posts, media, likes, comments, visibility RLS + RLS tests
 - [ ] **M4 Polls** · **M5 Events** · **M6 Chat** · **M7 Notifications, reports,

@@ -3,6 +3,7 @@ import { BottomNav } from "./BottomNav";
 import { RightRail } from "./RightRail";
 import { SideNav } from "./SideNav";
 import { TopBar } from "./TopBar";
+import type { ChromeMember } from "./member";
 
 /**
  * Application chrome — the three-column social layout (Facebook / LinkedIn):
@@ -14,8 +15,17 @@ import { TopBar } from "./TopBar";
  * The left rail appears from `lg` and the right rail from `xl`, so tablet and
  * phone fall back to a single comfortable column with the bottom bar for
  * navigation — exactly how the big social apps collapse.
+ *
+ * The member is resolved by the `(app)` layout before this renders, so the
+ * chrome never triggers its own auth round-trip.
  */
-export async function AppShell({ children }: { children: React.ReactNode }) {
+export async function AppShell({
+  member,
+  children,
+}: {
+  member: ChromeMember;
+  children: React.ReactNode;
+}) {
   const t = await getTranslations("Common");
 
   return (
@@ -27,10 +37,10 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         {t("skipToContent")}
       </a>
 
-      <TopBar />
+      <TopBar member={member} />
 
       <div className="mx-auto flex w-full max-w-[78rem] items-start gap-6 px-3 pt-3 lg:pt-5">
-        <SideNav />
+        <SideNav member={member} />
 
         <main
           id="main-content"

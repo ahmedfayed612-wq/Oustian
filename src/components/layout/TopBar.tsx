@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils/cn";
 import { LocaleSwitcher } from "./LocaleSwitcher";
+import type { ChromeMember } from "./member";
 import { isNavItemActive, navItems } from "./nav-items";
 
 /**
@@ -19,7 +20,7 @@ import { isNavItemActive, navItems } from "./nav-items";
  * carry is duplicated in the left rail on lg+ and in the bottom bar on phones,
  * so nothing becomes unreachable at any width.
  */
-export function TopBar() {
+export function TopBar({ member }: { member: ChromeMember }) {
   const tNav = useTranslations("Nav");
   const tTopBar = useTranslations("TopBar");
   const tBrand = useTranslations("Brand");
@@ -127,11 +128,16 @@ export function TopBar() {
 
           <Link
             href="/profile"
-            aria-label={tNav("profile")}
-            title={tNav("profile")}
+            aria-label={member.fullName}
+            title={member.fullName}
             className="ms-1 inline-flex rounded-pill"
           >
-            <Avatar size="sm" ring />
+            <Avatar
+              size="sm"
+              ring
+              name={member.fullName}
+              src={member.avatarUrl}
+            />
           </Link>
         </div>
       </div>

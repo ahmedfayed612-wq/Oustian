@@ -16,7 +16,8 @@ export type NavItemKey =
   | "notifications"
   | "profile"
   | "create"
-  | "settings";
+  | "settings"
+  | "admin";
 
 export type NavItem = {
   href: string;

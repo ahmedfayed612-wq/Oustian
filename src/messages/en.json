@@ -22,7 +22,8 @@
     "notifications": "Notifications",
     "profile": "Profile",
     "settings": "Settings",
-    "shortcuts": "Shortcuts"
+    "shortcuts": "Shortcuts",
+    "admin": "Admin"
   },
   "Search": {
     "label": "Search",
@@ -60,6 +61,164 @@
   },
   "TopBar": {
     "notifications": "Notifications"
+  },
+  "Auth": {
+    "campusNote": "Oustians is for OUST students only. Every account is approved by hand.",
+    "common": {
+      "working": "Working…"
+    },
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in with the email you registered.",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "newHere": "New here?"
+    },
+    "signup": {
+      "title": "Join Oustians",
+      "subtitle": "You need an invite code from the university.",
+      "inviteCode": "Invite code",
+      "inviteDescription": "Uppercase letters, numbers and dashes.",
+      "inviteHint": "We check the code as soon as you leave this field.",
+      "inviteValid": "Code accepted — still unused.",
+      "fullName": "Full name",
+      "username": "Username",
+      "usernameHint": "3-24 characters: a-z, 0-9 and underscore. This is how people find you.",
+      "email": "University or personal email",
+      "password": "Password",
+      "passwordHint": "At least 8 characters.",
+      "faculty": "Faculty",
+      "facultyPlaceholder": "Not decided yet",
+      "graduationYear": "Graduation year",
+      "graduationYearPlaceholder": "Not decided yet",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "approvalNote": "An admin reviews your account before the feed opens — the waiting screen comes next."
+    },
+    "pending": {
+      "metaTitle": "Waiting for approval",
+      "pending": {
+        "title": "Almost there",
+        "body": "Thanks {name} — your account is waiting for an admin to approve it. This page re-checks on its own."
+      },
+      "rejected": {
+        "title": "Account not approved",
+        "body": "An admin reviewed your request and did not approve it. Reply to your invite or contact the team."
+      },
+      "suspended": {
+        "title": "Account suspended",
+        "body": "Access to Oustians is switched off for this account."
+      },
+      "refresh": "Check again",
+      "autoRefresh": "Checking by itself every 30 seconds",
+      "signOut": "Sign out"
+    },
+    "errors": {
+      "invalid_input": "Please check the highlighted fields.",
+      "too_many_attempts": "Too many attempts. Please wait a few minutes and try again.",
+      "invalid_credentials": "Email or password is incorrect.",
+      "email_in_use": "That email already has an account.",
+      "invite_code_invalid": "This invite code is not recognised.",
+      "invite_code_expired": "This invite code has expired.",
+      "invite_code_exhausted": "This invite code has been used the maximum number of times.",
+      "invite_code_duplicate": "That code already exists.",
+      "invite_code_required": "Enter your invite code.",
+      "username_taken": "That username is taken — try another one.",
+      "username_invalid": "Usernames are 3-24 characters: a-z, 0-9 and underscore.",
+      "email_not_confirmed": "Open the confirmation email before signing in.",
+      "signups_disabled": "Sign-ups are closed right now.",
+      "not_authorised": "You do not have access to that.",
+      "profile_update_failed": "We could not save your profile. Please try again.",
+      "avatar_upload_failed": "The photo could not be uploaded. Try a JPG, PNG or WebP under 5 MB.",
+      "invite_create_failed": "The invite code could not be created.",
+      "approval_failed": "The decision could not be saved.",
+      "unknown": "Something went wrong. Please try again."
+    },
+    "success": {
+      "confirm_email": "Check your inbox — we sent a confirmation link to finish creating your account.",
+      "profile_saved": "Profile saved.",
+      "member_approved": "{name} was approved.",
+      "member_rejected": "{name} was not approved.",
+      "member_suspended": "Access suspended.",
+      "invite_created": "Invite code saved."
+    },
+    "fields": {
+      "email": "Enter a valid email address.",
+      "password": "At least 8 characters.",
+      "full_name": "Use your real name (2-80 characters).",
+      "username": "3-24 characters: a-z, 0-9 and underscore.",
+      "invite_code": "Uppercase letters, numbers and dashes.",
+      "bio": "Keep it under 280 characters."
+    }
+  },
+  "Profile": {
+    "metaTitle": "Profile",
+    "editTitle": "Edit profile",
+    "edit": "Edit profile",
+    "fullName": "Full name",
+    "username": "Username",
+    "usernameLocked": "Your handle is permanent for now — ask an admin if it must change.",
+    "faculty": "Faculty",
+    "facultyPlaceholder": "Not decided yet",
+    "graduationYear": "Graduation year",
+    "graduationYearPlaceholder": "Not decided yet",
+    "memberSince": "Joined {year}",
+    "bio": "Bio",
+    "bioHint": "Up to 280 characters.",
+    "emptyBio": "No bio yet.",
+    "languageLabel": "App language",
+    "languageHint": "Used for emails and for the interface after sign-in.",
+    "language": {
+      "en": "English",
+      "ar": "العربية"
+    },
+    "approvedChip": "Approved student",
+    "adminChip": "Admin",
+    "postsSoonTitle": "Your posts will live here",
+    "postsSoonBody": "The feed arrives in the next milestone — then your photos, polls and events show up on this page.",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "avatar": {
+      "upload": "Upload photo",
+      "replace": "Replace photo",
+      "remove": "Remove photo",
+      "uploading": "Uploading…",
+      "hint": "JPG, PNG or WebP up to 5 MB. Stored privately in Supabase Storage.",
+      "tooLarge": "That image is larger than 5 MB.",
+      "failed": "The photo could not be saved. Please try again.",
+      "errors": {
+        "not_authorised": "You do not have access to that.",
+        "avatar_upload_failed": "The photo could not be uploaded. Try a JPG, PNG or WebP under 5 MB."
+      }
+    }
+  },
+  "Admin": {
+    "title": "Admin tools",
+    "pendingCount": "{count} waiting",
+    "codeCount": "{count} codes",
+    "queueTitle": "Approval queue",
+    "queueBody": "Approve the students you recognise from campus. Rejecting asks for a reason the member will see.",
+    "queueEmpty": "Nothing to review — the queue is empty.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "rejectReason": "Reason (shown to the member)",
+    "rejectReasonPlaceholder": "e.g. I could not match you with a student record",
+    "rejectConfirm": "Confirm rejection",
+    "invitesTitle": "Invite codes",
+    "invitesBody": "Codes are single-use unless you allow more. Switch one off to stop it immediately.",
+    "codeLabel": "Code",
+    "codeHint": "Uppercase letters, numbers and dashes.",
+    "codeNote": "Note (optional)",
+    "codeMaxUses": "Max uses",
+    "createCode": "Create code",
+    "creating": "Creating…",
+    "codesEmpty": "No codes yet — create the first one above.",
+    "copy": "Copy code",
+    "codeUses": "{used}/{total} used",
+    "codeInactive": "Switched off",
+    "activate": "Activate",
+    "deactivate": "Deactivate"
   },
   "Theme": {
     "label": "Theme",
