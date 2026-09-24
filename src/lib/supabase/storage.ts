@@ -39,3 +39,36 @@ export async function signedStorageUrl(
 
   return data?.signedUrl ?? null;
 }
+
+/**
+ * Batched variant for lists (chat inbox, feed authors): one Storage call for
+ * every path instead of one request each. Returns a `{ path: signedUrl }` map
+ * so callers can look up what they need and skip the rest.
+ */
+export async function signedStorageUrls(
+  supabase: SupabaseClient<Database>,
+  paths: readonly (string | null | undefined)[],
+  expiresInSeconds = 60 * 60,
+): Promise<Record<string, string>> {
+  const unique = [...new Set(paths.filter((p): p is string => Boolean(p)))];
+
+  if (unique.length === 0) return {};
+
+  const { data, error } = await supabase.storage
+    .from(AVATAR_BUCKET)
+    .createSignedUrls(unique, expiresInSeconds);
+
+  if (error || !data) {
+    console.error("[storage] failed to sign batch", error?.message);
+    return {};
+  }
+
+  const urls: Record<string, string> = {};
+
+  for (const item of data) {
+    if (item.signedUrl && item.path && !item.error)
+      urls[item.path] = item.signedUrl;
+  }
+
+  return urls;
+}

@@ -27,11 +27,13 @@
   },
   "Search": {
     "label": "Search",
-    "description": "Find students, posts and events across campus.",
-    "placeholder": "Search Oustians",
-    "soon": "Soon",
-    "emptyTitle": "Search opens with the feed",
-    "emptyBody": "Once posts and profiles are live you'll be able to search members, posts, events and polls from here."
+    "description": "Find students across campus.",
+    "placeholder": "Search by name or username",
+    "submit": "Search",
+    "emptyTitle": "Find your classmates",
+    "emptyBody": "Search Oustians by full name or username to visit a profile or start a conversation.",
+    "noResultsTitle": "No members match “{term}”",
+    "noResultsBody": "Check the spelling or try a shorter version of the name."
   },
   "Composer": {
     "placeholder": "What's on your mind?",
@@ -175,6 +177,10 @@
     },
     "approvedChip": "Approved student",
     "adminChip": "Admin",
+    "privateBadge": "Private",
+    "privacyLabel": "Private profile",
+    "privacyHint": "Only admins can see your bio, faculty and year. Your name, photo and username stay visible so classmates can find you and message you.",
+    "privateNotice": "This profile is private — only admins can see these details.",
     "postsSoonTitle": "Your posts will live here",
     "postsSoonBody": "The feed arrives in the next milestone — then your photos, polls and events show up on this page.",
     "save": "Save changes",
@@ -234,6 +240,32 @@
   "Home": {
     "title": "Feed",
     "subtitle": "What's happening on campus"
+  },
+  "Chat": {
+    "metaTitle": "Messages",
+    "listTitle": "Messages",
+    "listDescription": "Campus conversations, delivered live.",
+    "emptyTitle": "No conversations yet",
+    "emptyBody": "Open a classmate's profile and tap Message to start chatting.",
+    "noMessages": "No messages yet",
+    "fromYou": "You: ",
+    "unknownPeer": "Oustians member",
+    "unread": "{count, plural, one {# unread message} other {# unread messages}}",
+    "messageButton": "Message",
+    "opening": "Opening…",
+    "threadLabel": "Conversation",
+    "backToMessages": "Back to messages",
+    "composerLabel": "Send a message",
+    "composerPlaceholder": "Write a message…",
+    "send": "Send",
+    "sending": "Sending…",
+    "errors": {
+      "empty": "Type a message first",
+      "too_long": "Messages can be up to 2000 characters",
+      "send_failed": "Couldn't send your message — please try again",
+      "start_failed": "Couldn't open the conversation — please try again",
+      "invalid_conversation": "You can't message this member"
+    }
   },
   "Placeholder": {
     "events": {

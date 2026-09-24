@@ -21,6 +21,60 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      conversation_members: {
+        Row: {
+          conversation_id: string;
+          joined_at: string;
+          last_read_at: string;
+          user_id: string;
+        };
+        Insert: {
+          conversation_id: string;
+          joined_at?: string;
+          last_read_at?: string;
+          user_id: string;
+        };
+        Update: {
+          conversation_id?: string;
+          joined_at?: string;
+          last_read_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "conversation_members_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "conversation_members_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      conversations: {
+        Row: {
+          created_at: string;
+          id: string;
+          last_message_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          last_message_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          last_message_at?: string;
+        };
+        Relationships: [];
+      };
       invite_codes: {
         Row: {
           code: string;
@@ -110,6 +164,7 @@ export type Database = {
           graduation_year: number | null;
           id: string;
           invite_code_id: string | null;
+          is_private: boolean;
           language: string;
           rejection_reason: string | null;
           role: Database["public"]["Enums"]["account_role"];
@@ -130,6 +185,7 @@ export type Database = {
           graduation_year?: number | null;
           id: string;
           invite_code_id?: string | null;
+          is_private?: boolean;
           language?: string;
           rejection_reason?: string | null;
           role?: Database["public"]["Enums"]["account_role"];
@@ -150,6 +206,7 @@ export type Database = {
           graduation_year?: number | null;
           id?: string;
           invite_code_id?: string | null;
+          is_private?: boolean;
           language?: string;
           rejection_reason?: string | null;
           role?: Database["public"]["Enums"]["account_role"];
@@ -171,6 +228,45 @@ export type Database = {
             columns: ["invite_code_id"];
             isOneToOne: false;
             referencedRelation: "invite_codes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      messages: {
+        Row: {
+          body: string;
+          conversation_id: string;
+          created_at: string;
+          id: string;
+          sender_id: string;
+        };
+        Insert: {
+          body: string;
+          conversation_id: string;
+          created_at?: string;
+          id?: string;
+          sender_id: string;
+        };
+        Update: {
+          body?: string;
+          conversation_id?: string;
+          created_at?: string;
+          id?: string;
+          sender_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -213,9 +309,32 @@ export type Database = {
         Args: { p_user?: string };
         Returns: boolean;
       };
+      is_conversation_member: {
+        Args: { p_conversation: string };
+        Returns: boolean;
+      };
       is_invite_code_valid: {
         Args: { p_code: string };
         Returns: boolean;
+      };
+      list_conversation_previews: {
+        Args: Record<PropertyKey, never>;
+        Returns: Array<{
+          conversation_id: string;
+          last_read_at: string;
+          other_id: string | null;
+          other_username: string | null;
+          other_full_name: string | null;
+          other_avatar_path: string | null;
+          last_message_body: string | null;
+          last_message_at: string;
+          last_message_sender: string | null;
+          unread_count: number;
+        }>;
+      };
+      start_conversation: {
+        Args: { p_other: string };
+        Returns: string;
       };
     };
     Enums: {

@@ -47,6 +47,9 @@ export const profileSchema = z.object({
   faculty: z.string().trim().max(80).optional(),
   graduation_year: z.coerce.number().int().min(2000).max(2100).optional(),
   language: z.enum(["en", "ar"]),
+  // Checkboxes send nothing when unticked, `"on"` when ticked (formDataToObject
+  // already dropped empty strings, so presence === true).
+  is_private: z.enum(["on"]).optional(),
 });
 
 export const inviteCodeCreateSchema = z.object({

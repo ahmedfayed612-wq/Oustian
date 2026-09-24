@@ -100,6 +100,7 @@ export default async function ProfilePage() {
             {profile.role === "admin" ? (
               <Chip tone="accent">{t("adminChip")}</Chip>
             ) : null}
+            {profile.is_private ? <Chip>{t("privateBadge")}</Chip> : null}
             <Chip>
               {profile.language === "ar" ? t("language.ar") : t("language.en")}
             </Chip>

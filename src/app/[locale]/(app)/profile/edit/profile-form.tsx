@@ -25,6 +25,7 @@ export type ProfileFormValues = {
   language: "ar" | "en";
   username: string;
   avatarPath: string | null;
+  isPrivate: boolean;
 };
 
 /**
@@ -156,6 +157,23 @@ export function ProfileForm({
             <option value="ar">{t("language.ar")}</option>
           </select>
         </Field>
+
+        <label className="flex cursor-pointer items-start gap-3 rounded-control border border-border bg-surface-2 p-3.5 transition-colors hover:border-border-strong">
+          <input
+            type="checkbox"
+            name="is_private"
+            defaultChecked={profile.isPrivate}
+            className="mt-0.5 size-4 shrink-0 accent-brand"
+          />
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-text">
+              {t("privacyLabel")}
+            </span>
+            <span className="mt-0.5 block text-xs text-muted">
+              {t("privacyHint")}
+            </span>
+          </span>
+        </label>
 
         <SubmitButton pendingLabel={t("saving")}>{t("save")}</SubmitButton>
       </Card>

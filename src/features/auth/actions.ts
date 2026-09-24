@@ -221,6 +221,7 @@ export async function updateProfileAction(
       faculty: parsed.data.faculty ?? null,
       graduation_year: parsed.data.graduation_year ?? null,
       language: parsed.data.language,
+      is_private: parsed.data.is_private === "on",
     })
     .eq("id", state.profile.id);
 

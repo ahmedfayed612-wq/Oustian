@@ -32,6 +32,7 @@ export default async function ProfileEditPage() {
           language: profile.language === "ar" ? "ar" : "en",
           username: profile.username,
           avatarPath: profile.avatar_path,
+          isPrivate: profile.is_private,
         }}
       />
     </div>
