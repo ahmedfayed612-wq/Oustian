@@ -2,15 +2,22 @@
 
 /* ============================================================================
    Oustians design tokens
-   ----------------------------------------------------------------------------
-   Palette source: the OUST brand mark (geometric peak in gold/tan + deep teal
-   lettering). Values below are approximations until the official logo file is
-   dropped in — change them here only, never in components.
 
-   `--brand`   primary action color (deep teal)
-   `--accent`  gold, used sparingly (active indicators, "Going", badges)
-   `--*-ink`   WCAG-AA readable counterparts of the decorative fills above
-   `--on-*`    text colors that sit on top of the matching fill
+   Brand source: the OUST (Obour University for Science and Technology) logo —
+   a deep petrol-teal wordmark sitting under an antique-gold geometric peak.
+
+   Layout follows the familiar social-network pattern (Facebook / LinkedIn):
+   a grey page behind white content cards, a top bar with search + section tabs,
+   a left rail with the profile card, a centred feed column and a right rail for
+   suggestions. This file is the single source of truth for colour — components
+   never hard-code hex values.
+
+   `--brand`        deep teal — links, active tabs, primary buttons
+   `--brand-strong` pressed / darker teal
+   `--accent`       antique gold — the logo mark, sparing highlights
+   `--bg` `--surface` `--surface-2`   page / card / inset surfaces
+   `--*-ink`        WCAG-AA readable counterparts of the decorative fills
+   `--on-*`         text colours that sit on top of the matching fill
    ========================================================================== */
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -20,31 +27,33 @@
 :root {
   color-scheme: light;
 
-  /* palette */
-  --brand: #0f5c6b;
-  --accent: #b99a5b;
-  --bg: #faf8f4;
-  --surface: #ffffff;
-  --text: #12262b;
-  --muted: #6b7f84;
-  --danger: #d0453b;
+  /* palette — lifted from the OUST logo */
+  --brand: #14495c; /* petrol teal of the "OUST" wordmark */
+  --brand-strong: #0d3444;
+  --accent: #c2a05b; /* antique gold of the peak mark */
+  --bg: #f1f3f5; /* grey page behind the cards (classic social feed) */
+  --surface: #ffffff; /* cards, top bar */
+  --surface-2: #f3f6f7; /* search fields, hovered rows, inset blocks */
+  --text: #11242b;
+  --muted: #64727a;
+  --danger: #cf3b30;
 
   /* derived surfaces + lines */
-  --border: #e9e2d7;
-  --border-strong: #d5cbbc;
-  --brand-soft: #e7f0f1;
-  --accent-soft: #f5efe1;
-  --danger-soft: #fbeae8;
-  --overlay: rgb(18 38 43 / 0.45);
+  --border: #e1e5e8;
+  --border-strong: #c7d0d5;
+  --brand-soft: #e8f1f4;
+  --accent-soft: #f7f2e6;
+  --danger-soft: #fdecea;
+  --overlay: rgb(17 36 43 / 0.5);
 
   /* accessible inks (gold/danger are decorative — these are the text-safe ones) */
-  --muted-ink: #5e7277;
-  --accent-ink: #7a6432;
+  --muted-ink: #5b6a72;
+  --accent-ink: #7b6330;
   --on-brand: #ffffff;
-  --on-accent: #2c2413;
+  --on-accent: #241d0d;
   --on-danger: #ffffff;
   --ring: var(--brand);
-  --shadow-color: 18 38 43;
+  --shadow-color: 17 36 43;
 
   /* font stacks live outside @theme so the next/font variables (declared on
      <html>) resolve here; the two stacks mirror each other for mixed content */
@@ -59,24 +68,26 @@
 .dark {
   color-scheme: dark;
 
-  --brand: #3fa3b5;
-  --accent: #d2b676;
-  --bg: #0c1517;
-  --surface: #142125;
-  --text: #eaf1f2;
-  --muted: #8fa5aa;
-  --danger: #ef6a60;
+  --brand: #58b6c9;
+  --brand-strong: #8bd0de;
+  --accent: #d9be7d;
+  --bg: #0c1417;
+  --surface: #162124;
+  --surface-2: #1e2a2e;
+  --text: #e9f0f2;
+  --muted: #8ba0a6;
+  --danger: #f0736a;
 
-  --border: #24383e;
-  --border-strong: #345560;
-  --brand-soft: #133239;
-  --accent-soft: #2b2517;
-  --danger-soft: #3a1f1d;
-  --overlay: rgb(3 9 10 / 0.66);
+  --border: #26363a;
+  --border-strong: #374b51;
+  --brand-soft: #122e35;
+  --accent-soft: #2a2417;
+  --danger-soft: #3b1f1c;
+  --overlay: rgb(3 8 10 / 0.68);
 
-  --muted-ink: #9db2b6;
-  --accent-ink: #d2b676;
-  --on-brand: #04252b;
+  --muted-ink: #9db1b6;
+  --accent-ink: #d9be7d;
+  --on-brand: #05262d;
   --on-accent: #2c2413;
   --on-danger: #2b0b08;
   --ring: var(--brand);
@@ -86,12 +97,14 @@
 @theme inline {
   /* colors */
   --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
   --color-brand-soft: var(--brand-soft);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-accent-ink: var(--accent-ink);
   --color-bg: var(--bg);
   --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
   --color-text: var(--text);
   --color-muted: var(--muted-ink);
   --color-muted-decor: var(--muted);
@@ -105,13 +118,16 @@
   --color-overlay: var(--overlay);
   --color-ring: var(--ring);
 
-  /* shape — rounded cards (16-20px), pill chips */
-  --radius-card: 1.125rem;
-  --radius-card-lg: 1.25rem;
-  --radius-control: 0.875rem;
+  /* shape — social-network geometry: modest card radius, 8px controls */
+  --radius-card: 0.75rem;
+  --radius-card-lg: 1rem;
+  --radius-control: 0.5rem;
   --radius-pill: 9999px;
 
-  /* soft, low-contrast shadows */
+  /* flat, low-contrast shadows — cards sit on a grey page */
+  --shadow-card:
+    0 0 0 1px rgb(var(--shadow-color) / 0.04),
+    0 1px 2px rgb(var(--shadow-color) / 0.08);
   --shadow-soft:
     0 1px 2px rgb(var(--shadow-color) / 0.05),
     0 8px 20px -12px rgb(var(--shadow-color) / 0.16);

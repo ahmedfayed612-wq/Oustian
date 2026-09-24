@@ -1,6 +1,8 @@
 import { useTranslations } from "next-intl";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { cn } from "@/lib/utils/cn";
+import { Card } from "./Card";
 import { Chip } from "./Chip";
-import { EmptyState } from "./EmptyState";
 import {
   placeholderHighlightIcon,
   placeholderIcons,
@@ -26,17 +28,19 @@ export function ComingSoon({
   const HighlightIcon = placeholderHighlightIcon;
 
   return (
-    <EmptyState
-      className={className}
-      icon={<Icon className="size-6" />}
-      title={t("title")}
-      description={t("description")}
-      action={
+    <div className={cn("flex flex-col gap-3", className)}>
+      <PageHeader title={t("title")} description={t("description")} />
+
+      <Card className="flex flex-col items-center gap-3 px-6 py-10 text-center">
+        <span className="flex size-14 items-center justify-center rounded-pill bg-brand-soft text-brand">
+          <Icon className="size-7" aria-hidden="true" />
+        </span>
         <Chip tone="accent">
-          <HighlightIcon className="size-3.5" />
+          <HighlightIcon className="size-3.5" aria-hidden="true" />
           {tCommon("comingSoon")}
         </Chip>
-      }
-    />
+        <p className="max-w-sm text-sm text-muted">{tCommon("inProgress")}</p>
+      </Card>
+    </div>
   );
 }

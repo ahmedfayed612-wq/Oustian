@@ -18,10 +18,10 @@ const sizeClasses: Record<ButtonSize, string> = {
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "bg-brand text-on-brand shadow-soft hover:brightness-110",
+  primary: "bg-brand text-on-brand hover:bg-brand-strong",
   secondary:
-    "border border-border bg-surface text-text hover:border-border-strong hover:bg-brand-soft",
-  ghost: "text-muted hover:bg-brand-soft hover:text-brand",
+    "border border-border bg-surface text-text hover:border-border-strong hover:bg-surface-2",
+  ghost: "text-muted hover:bg-surface-2 hover:text-brand",
   accent: "bg-accent text-on-accent hover:brightness-105",
   danger: "bg-danger text-on-danger hover:brightness-110",
 };

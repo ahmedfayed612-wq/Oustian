@@ -40,7 +40,7 @@ export function LocaleSwitcher({ className }: { className?: string }) {
       )}
     >
       <Languages className="size-5" aria-hidden="true" />
-      <span>{t("other")}</span>
+      <span className="hidden md:inline">{t("other")}</span>
     </button>
   );
 }

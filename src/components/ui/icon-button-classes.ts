@@ -5,8 +5,8 @@ type IconButtonVariant = "plain" | "soft" | "brand" | "danger";
 /** Shared so icon-only links can look identical to `IconButton`s. */
 export const iconButtonVariantClasses: Record<IconButtonVariant, string> = {
   plain:
-    "text-muted hover:bg-brand-soft hover:text-brand active:bg-brand-soft/70",
-  soft: "bg-surface text-text shadow-soft hover:bg-brand-soft hover:text-brand",
+    "text-muted hover:bg-surface-2 hover:text-brand active:bg-surface-2/70",
+  soft: "bg-surface text-text shadow-card hover:bg-surface-2 hover:text-brand",
   brand: "bg-brand text-on-brand hover:brightness-110",
   danger: "text-danger hover:bg-danger-soft",
 };

@@ -61,10 +61,11 @@ src/
     globals.css          # design tokens (light + dark) — single source of truth
     fonts.ts             # Plus Jakarta Sans + IBM Plex Sans Arabic
   components/
-    brand/BrandMark.tsx  # swappable placeholder logo (see file header)
-    layout/              # AppShell, TopBar, SideNav, BottomNav, switches
+    brand/               # BrandMark (peak + Oustians), UniversityLogo (OUST lockup)
+    feed/                # FeedComposer, FeedPlaceholder (real feed lands in M3)
+    layout/              # AppShell, TopBar, SideNav, RightRail, BottomNav
     theme/               # ThemeProvider, ThemeToggle
-    ui/                  # Button, IconButton, Card, Chip, Skeleton, EmptyState
+    ui/                  # Button, IconButton, Card, Chip, Avatar, Skeleton, EmptyState
   features/              # feature modules land here (auth, feed, chat, ...)
   i18n/                  # routing, navigation, request config
   lib/
@@ -78,39 +79,50 @@ supabase/migrations/     # SQL migrations (RLS included) — M1 onwards
 
 ## Design system
 
+Identity comes from the OUST logo: the petrol-teal wordmark is `--brand`, the
+antique-gold peak is `--accent`, and the layout follows the familiar
+social-network pattern — grey page, white cards, three columns on desktop,
+top-bar tabs and a bottom bar on phones.
+
 All tokens live in `src/app/globals.css`. Change them there, never in a
 component.
 
-| Token       | Light     | Dark      | Used for                    |
-| ----------- | --------- | --------- | --------------------------- |
-| `--brand`   | `#0F5C6B` | `#3FA3B5` | primary actions, active nav |
-| `--accent`  | `#B99A5B` | `#D2B676` | gold highlights, "Going"    |
-| `--bg`      | `#FAF8F4` | `#0C1517` | page background             |
-| `--surface` | `#FFFFFF` | `#142125` | cards, sheets               |
-| `--text`    | `#12262B` | `#EAF1F2` | body copy                   |
-| `--muted`   | `#6B7F84` | `#8FA5AA` | secondary copy              |
-| `--danger`  | `#D0453B` | `#EF6A60` | destructive actions         |
+| Token            | Light     | Dark      | Used for                       |
+| ---------------- | --------- | --------- | ------------------------------ |
+| `--brand`        | `#14495C` | `#58B6C9` | primary actions, active tabs   |
+| `--brand-strong` | `#0D3444` | `#8BD0DE` | pressed / hovered primary      |
+| `--accent`       | `#C2A05B` | `#D9BE7D` | the logo peak, gold highlights |
+| `--bg`           | `#F1F3F5` | `#0C1417` | page behind the cards          |
+| `--surface`      | `#FFFFFF` | `#162124` | cards, top bar                 |
+| `--surface-2`    | `#F3F6F7` | `#1E2A2E` | search fields, hovered rows    |
+| `--text`         | `#11242B` | `#E9F0F2` | body copy                      |
+| `--muted`        | `#64727A` | `#8BA0A6` | secondary copy                 |
+| `--danger`       | `#CF3B30` | `#F0736A` | destructive actions            |
 
 `--muted-ink`, `--accent-ink`, `--on-brand` … are WCAG-AA corrections of the
 decorative fills; use the `-ink` / `on-` tokens whenever the color carries text.
 
 Utility conventions:
 
-- Radii: `rounded-card` (18px), `rounded-card-lg` (20px), `rounded-control`,
-  `rounded-pill`.
-- Shadows: `shadow-soft` (resting), `shadow-lift` (raised/hover).
+- Radii: `rounded-card` (12px), `rounded-card-lg` (16px), `rounded-control`
+  (8px), `rounded-pill`.
+- Shadows: `shadow-card` for content cards, `shadow-soft` (resting) and
+  `shadow-lift` (raised/hover) for overlays and floating surfaces.
 - Type: body 16px, `text-body` (15px) for dense copy, 44px minimum tap target.
 - Motion: 150-250ms `ease-out-soft`; `prefers-reduced-motion` is honored.
 
-### Swapping in the real logo
+### Brand assets
 
-Replace the two `<path>` elements in `PeakMark`
-(`src/components/brand/BrandMark.tsx`) with the official artwork, keeping it
-token- or `currentColor`-driven so both themes still work. Nothing else in the
-codebase references the artwork.
+The peak mark in `PeakMark` (`src/components/brand/BrandMark.tsx`) is redrawn
+from the uploaded OUST logo as geometry (`chevronPoints()`), so it stays crisp at
+every size and follows the theme. `UniversityLogo` composes it with the wordmark
+and the English/Arabic university names for the campus panels, and
+`public/icon.svg` is the app icon (teal tile + gold peak).
 
-The university's official logo is **not** embedded anywhere — it needs the
-university's permission.
+If the university supplies the official vector file later, drop it into `public/`
+and reference it from `PeakMark` — no other file touches the artwork. Using the
+university's marks in a student-run app is subject to the university's
+permission.
 
 ## Bilingual + RTL rules (non-negotiable)
 
@@ -158,6 +170,10 @@ tests.
 
 - [x] **M0 Foundation** — scaffold, design tokens, fonts, i18n + RTL, theming,
       `BrandMark`, app shell + navigation, Supabase wiring, docs
+- [x] **M0.5 Brand & layout** — OUST palette and peak mark taken from the
+      university logo, `UniversityLogo` lockup, and the social-network shell
+      (top-bar tabs + search, left profile rail, centred feed column, right
+      suggestions rail, bottom bar on phones)
 - [ ] **M1 Auth & profiles** — profiles/invite-code migrations, sign-up with
       invite code, profile setup, pending approval, admin approval
 - [ ] **M2 Connections** — requests, blocks, search, private profiles
@@ -187,3 +203,22 @@ tests.
   ships `themeColor`, `appleWebApp` metadata and an SVG favicon.
 - Minimum tap target: primary buttons are 44px (`min-h-11`); the denser `sm`
   size (40px) is reserved for secondary desktop actions.
+
+**M0.5**
+
+- The brand palette and the peak mark come from the uploaded OUST logo: the
+  petrol-teal wordmark becomes `--brand`, the antique gold of the peak becomes
+  `--accent`. The mark is generated from `chevronPoints()` geometry rather than
+  baked path data and accepts `tone="gold" | "brand" | "current"`, so the same
+  component works on the teal chrome, on gold surfaces and in dark mode.
+- The shell is deliberately Facebook/LinkedIn-shaped: grey page, white cards,
+  section tabs centred in the top bar, profile card in the left rail, suggestions
+  in the right rail. The rails appear at `lg` / `xl` and collapse away below that,
+  where the bottom bar carries the same five destinations.
+- `UniversityLogo` renders the OUST lockup (mark, wordmark, English and Arabic
+  names) for the campus panels; auth screens reuse it in M1.
+- Feed screens ship with skeleton posts and no mock content, so the spacing, card
+  rhythm and action row are final before M3 adds real posts.
+- Accessibility was re-checked after the redesign: one `h1` per screen,
+  `aria-current="page"` on the active destination, `sr-only` headings where the
+  layout hides them visually, and 44px tap targets preserved.

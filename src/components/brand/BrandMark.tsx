@@ -1,38 +1,111 @@
 import { cn } from "@/lib/utils/cn";
 
 /**
- * Placeholder brand mark for Oustians.
+ * The OUST peak — the three overlapping geometric chevrons from the university
+ * logo, redrawn as clean vectors so they stay crisp at every size and follow the
+ * theme (the gold token lightens in dark mode automatically).
  *
- * ⚠️ Deliberately NOT the university logo — using the official OUST mark in the
- * app requires the university's permission. This is a simple geometric peak
- * inspired by that mark, paired with an "Oustians" wordmark.
- *
- * To swap in the final artwork: replace `PeakMark`'s paths with the provided
- * SVG (keep it `currentColor`/token driven so light + dark mode still work) and
- * leave everything else untouched — no other file references the artwork.
+ * `tone` keeps the mark usable on any background:
+ *   `gold`    the logo's antique gold (default, used in the app chrome)
+ *   `brand`   petrol teal, for use on gold/photo surfaces
+ *   `current` inherits the text colour (inside coloured chips and buttons)
  */
-export function PeakMark({ className }: { className?: string }) {
+export type PeakTone = "gold" | "brand" | "current";
+
+const peakToneFill: Record<PeakTone, string> = {
+  gold: "var(--accent)",
+  brand: "var(--brand)",
+  current: "currentColor",
+};
+
+/**
+ * A single chevron ("Λ" with a flat underside) as a polygon, so the three peaks
+ * can be described by geometry instead of hand-tuned path data.
+ */
+function chevronPoints(options: {
+  apexX: number;
+  apexY: number;
+  halfWidth: number;
+  baseY: number;
+  thickness: number;
+}) {
+  const { apexX, apexY, halfWidth, baseY, thickness } = options;
+  const innerApexY = apexY + thickness * 1.75;
+
+  return [
+    [apexX, apexY],
+    [apexX + halfWidth, baseY],
+    [apexX + halfWidth - thickness, baseY],
+    [apexX, innerApexY],
+    [apexX - halfWidth + thickness, baseY],
+    [apexX - halfWidth, baseY],
+  ]
+    .map(([x, y]) => `${x},${y}`)
+    .join(" ");
+}
+
+export function PeakMark({
+  className,
+  tone = "gold",
+}: {
+  className?: string;
+  tone?: PeakTone;
+}) {
+  const fill = peakToneFill[tone];
+
   return (
     <svg
-      viewBox="0 0 32 24"
+      viewBox="0 0 48 32"
       className={cn("block", className)}
       aria-hidden="true"
       focusable="false"
     >
-      {/* back peak — gold/tan, the accent from the university mark */}
-      <path d="M20.5 0.8 31.6 23H9.4Z" fill="var(--accent)" />
-      {/* front peak — deep teal, overlapping the gold one */}
-      <path d="M11.6 7.4 22.8 23H0.4Z" fill="var(--brand)" />
+      {/* back-right peak */}
+      <polygon
+        points={chevronPoints({
+          apexX: 33.5,
+          apexY: 8.5,
+          halfWidth: 12.5,
+          baseY: 29.5,
+          thickness: 4.2,
+        })}
+        fill={fill}
+        opacity="0.78"
+      />
+      {/* inner step — the small peak that echoes the middle of the logo */}
+      <polygon
+        points={chevronPoints({
+          apexX: 24.5,
+          apexY: 13,
+          halfWidth: 8,
+          baseY: 29.5,
+          thickness: 3.6,
+        })}
+        fill={fill}
+        opacity="0.9"
+      />
+      {/* front-left peak */}
+      <polygon
+        points={chevronPoints({
+          apexX: 16.5,
+          apexY: 2.5,
+          halfWidth: 14,
+          baseY: 29.5,
+          thickness: 4.2,
+        })}
+        fill={fill}
+      />
     </svg>
   );
 }
 
 type BrandMarkSize = "sm" | "md" | "lg";
 
+/** The mark is a 3:2 lockup, so widths are derived from the matching height. */
 const markSizes: Record<BrandMarkSize, string> = {
-  sm: "h-4 w-[21px]",
-  md: "h-5 w-[27px]",
-  lg: "h-7 w-[37px]",
+  sm: "h-4 w-6",
+  md: "h-5 w-[30px]",
+  lg: "h-7 w-[42px]",
 };
 
 const wordmarkSizes: Record<BrandMarkSize, string> = {

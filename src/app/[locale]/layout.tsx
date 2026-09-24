@@ -55,8 +55,8 @@ export const viewport: Viewport = {
   // full-bleed on notched phones; the bottom nav adds its own safe-area padding
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FAF8F4" },
-    { media: "(prefers-color-scheme: dark)", color: "#0C1517" },
+    { media: "(prefers-color-scheme: light)", color: "#F1F3F5" },
+    { media: "(prefers-color-scheme: dark)", color: "#0C1417" },
   ],
 };
 

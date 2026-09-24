@@ -1,11 +1,19 @@
 import { getTranslations } from "next-intl/server";
 import { BottomNav } from "./BottomNav";
+import { RightRail } from "./RightRail";
 import { SideNav } from "./SideNav";
 import { TopBar } from "./TopBar";
 
 /**
- * Application chrome: skip link, sticky top bar, desktop sidebar, mobile bottom
- * bar and the centered content column (mobile first, roughly 360-430px wide).
+ * Application chrome — the three-column social layout (Facebook / LinkedIn):
+ *
+ *   ┌─────────────── top bar: search · section tabs · actions ───────────────┐
+ *   │  left rail  │      feed column (max 37.5rem)      │   right rail       │
+ *   └────────────────────────────────────────────────────────────────────────┘
+ *
+ * The left rail appears from `lg` and the right rail from `xl`, so tablet and
+ * phone fall back to a single comfortable column with the bottom bar for
+ * navigation — exactly how the big social apps collapse.
  */
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const t = await getTranslations("Common");
@@ -21,15 +29,20 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 
       <TopBar />
 
-      <div className="mx-auto flex w-full max-w-5xl">
+      <div className="mx-auto flex w-full max-w-[78rem] items-start gap-6 px-3 pt-3 lg:pt-5">
         <SideNav />
+
         <main
           id="main-content"
           tabIndex={-1}
-          className="min-w-0 flex-1 px-4 pt-4 pb-28 md:px-6 md:pt-6 md:pb-12"
+          className="min-w-0 flex-1 pb-24 lg:pb-10"
         >
-          <div className="mx-auto w-full max-w-2xl">{children}</div>
+          <div className="mx-auto flex w-full max-w-[37.5rem] flex-col gap-3 lg:mx-0">
+            {children}
+          </div>
         </main>
+
+        <RightRail />
       </div>
 
       <BottomNav />

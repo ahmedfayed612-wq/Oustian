@@ -5,7 +5,11 @@ import { cn } from "@/lib/utils/cn";
 import { Link, usePathname } from "@/i18n/navigation";
 import { isNavItemActive, navItems } from "./nav-items";
 
-/** Mobile primary navigation. Gold marks the active tab; "Create" is raised. */
+/**
+ * Phone navigation. Icon + label with the active tab marked by the short bar
+ * along the top edge — the Facebook pattern — and safe-area padding so it stays
+ * clear of the home indicator.
+ */
 export function BottomNav() {
   const t = useTranslations("Nav");
   const pathname = usePathname();
@@ -15,7 +19,7 @@ export function BottomNav() {
       aria-label={t("label")}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 pb-safe backdrop-blur-md md:hidden"
     >
-      <ul className="mx-auto grid h-16 max-w-lg grid-cols-5">
+      <ul className="mx-auto grid h-14 max-w-lg grid-cols-5">
         {navItems.map((item) => {
           const active = isNavItemActive(pathname, item.href);
 
@@ -24,7 +28,7 @@ export function BottomNav() {
               {active ? (
                 <span
                   aria-hidden="true"
-                  className="absolute inset-x-1/2 top-0 h-0.5 w-8 -translate-x-1/2 rounded-pill bg-accent"
+                  className="absolute inset-x-0 top-0 h-[3px] rounded-b-pill bg-brand"
                 />
               ) : null}
               <Link
@@ -35,25 +39,14 @@ export function BottomNav() {
                   active ? "text-brand" : "text-muted",
                 )}
               >
-                {item.emphasized ? (
-                  <span
-                    className={cn(
-                      "flex size-9 items-center justify-center rounded-pill bg-brand text-on-brand shadow-soft transition duration-200 ease-out-soft",
-                      active && "ring-2 ring-accent",
-                    )}
-                  >
-                    <item.Icon className="size-5" aria-hidden="true" />
-                  </span>
-                ) : (
-                  <item.Icon
-                    aria-hidden="true"
-                    className={cn(
-                      "size-6",
-                      active ? "stroke-[2.4]" : "stroke-[1.8]",
-                    )}
-                  />
-                )}
-                <span>{t(item.labelKey)}</span>
+                <item.Icon
+                  aria-hidden="true"
+                  className={cn(
+                    "size-6",
+                    active ? "stroke-[2.3]" : "stroke-[1.7]",
+                  )}
+                />
+                <span className="truncate px-0.5">{t(item.labelKey)}</span>
               </Link>
             </li>
           );

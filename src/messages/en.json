@@ -10,15 +10,53 @@
   },
   "Common": {
     "skipToContent": "Skip to content",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "inProgress": "We're building this screen right now — it ships in an upcoming update."
   },
   "Nav": {
     "label": "Main navigation",
     "home": "Home",
     "events": "Events",
     "create": "Create",
-    "chat": "Chat",
-    "profile": "Profile"
+    "chat": "Messages",
+    "notifications": "Notifications",
+    "profile": "Profile",
+    "settings": "Settings",
+    "shortcuts": "Shortcuts"
+  },
+  "Search": {
+    "label": "Search",
+    "description": "Find students, posts and events across campus.",
+    "placeholder": "Search Oustians",
+    "soon": "Soon",
+    "emptyTitle": "Search opens with the feed",
+    "emptyBody": "Once posts and profiles are live you'll be able to search members, posts, events and polls from here."
+  },
+  "Composer": {
+    "placeholder": "What's on your mind?",
+    "photo": "Photo",
+    "event": "Event",
+    "poll": "Poll"
+  },
+  "Feed": {
+    "title": "Feed",
+    "badge": "In progress",
+    "placeholderTitle": "Your campus feed is being built",
+    "placeholderBody": "Posts, photos, likes and comments arrive with the next milestone. The layout below is final — only the content is missing.",
+    "actionsLabel": "Post actions: like, comment and share"
+  },
+  "Rail": {
+    "suggestionsTitle": "People you may know",
+    "suggestionsBody": "Connect with students from your faculty and year.",
+    "connect": "Connect",
+    "campusBody": "The private app for Obour University for Science and Technology students — invite codes and manual approval only.",
+    "aboutTitle": "Why invite-only?",
+    "aboutBody": "Every account is reviewed by hand, so your feed stays full of real OUST students."
+  },
+  "ProfileCard": {
+    "fallbackName": "Your profile",
+    "fallbackHeadline": "Add your faculty, year and photo",
+    "editProfile": "Set up profile"
   },
   "TopBar": {
     "notifications": "Notifications"
@@ -35,14 +73,8 @@
     "switchTo": "Switch to Arabic"
   },
   "Home": {
-    "heroTitle": "Welcome to Oustians",
-    "heroBody": "A private space for OUST students — share moments, plan meetups and talk to your people, without the noise.",
-    "statusTitle": "You're early",
-    "statusBody": "Sign-up, the feed, events, polls and chat are all being built right now. What you see is the app shell: same layout on your phone, dark mode and Arabic included.",
-    "languageTitle": "Arabic and English, from day one",
-    "languageBody": "Switch language from the top bar any time — the whole layout flips, navigation included.",
-    "privacyTitle": "Campus-only, always",
-    "privacyBody": "Every account is approved by hand, so your feed stays full of real OUST students."
+    "title": "Feed",
+    "subtitle": "What's happening on campus"
   },
   "Placeholder": {
     "events": {
