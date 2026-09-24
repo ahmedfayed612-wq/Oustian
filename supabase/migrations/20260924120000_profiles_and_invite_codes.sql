@@ -64,7 +64,9 @@ create table if not exists public.invite_codes (
   uses integer not null default 0 check (uses >= 0),
   expires_at timestamptz,
   is_active boolean not null default true,
-  created_by uuid references public.profiles (id) on delete set null,
+  -- FK to profiles is added right after the profiles table exists below
+  -- (the two tables reference each other, so one side must be deferred)
+  created_by uuid,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint invite_codes_uses_within_max check (uses <= max_uses)
@@ -109,6 +111,24 @@ create table if not exists public.profiles (
 
 comment on table public.profiles is
   'Student profiles. `status` = approved is required before any app route works.';
+
+-- Deferred half of the profiles <-> invite_codes cycle (see invite_codes above).
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'invite_codes_created_by_fkey'
+      and conrelid = 'public.invite_codes'::regclass
+  ) then
+    alter table public.invite_codes
+      add constraint invite_codes_created_by_fkey
+      foreign key (created_by)
+      references public.profiles (id)
+      on delete set null;
+  end if;
+end
+$$;
 
 create index if not exists profiles_status_idx
   on public.profiles (status, created_at desc);
