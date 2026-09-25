@@ -27,6 +27,7 @@ export const rateLimitRules = {
   inviteCreate: { bucket: "admin:invite-create", window: "1 hour", max: 60 },
   approval: { bucket: "admin:approval", window: "10 minutes", max: 100 },
   chatStart: { bucket: "chat:start", window: "10 minutes", max: 30 },
+  connection: { bucket: "connections:action", window: "10 minutes", max: 30 },
   postCreate: { bucket: "feed:post", window: "10 minutes", max: 10 },
   eventCreate: { bucket: "events:create", window: "10 minutes", max: 10 },
 } as const satisfies Record<string, RateLimitRule>;

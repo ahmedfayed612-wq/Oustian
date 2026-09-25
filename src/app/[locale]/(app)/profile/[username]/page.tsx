@@ -7,6 +7,11 @@ import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { requireApprovedMember } from "@/features/auth/session";
+import { ConnectButton } from "@/features/connections/connect-button";
+import {
+  getConnectionState,
+  listConnectionCount,
+} from "@/features/connections/queries";
 import { MessageButton } from "@/features/chat/message-button";
 import { PostCard } from "@/features/feed/post-card";
 import { listAuthorPosts } from "@/features/feed/queries";
@@ -73,7 +78,12 @@ export default async function MemberProfilePage({
   if (profile.id === viewer.id) redirect(`/${locale}/profile`);
 
   const supabase = await createClient();
-  const posts = await listAuthorPosts(supabase, profile.id, viewer.id);
+
+  const [posts, connectionState, connectionCount] = await Promise.all([
+    listAuthorPosts(supabase, profile.id, viewer.id),
+    getConnectionState(supabase, viewer.id, profile.id),
+    listConnectionCount(supabase, profile.id),
+  ]);
 
   // One batched Storage call signs this member's avatar, the viewer's avatar
   // (the `PostCard` composer) and every post author's avatar together.
@@ -106,14 +116,17 @@ export default async function MemberProfilePage({
         <div className="h-28 bg-brand-soft" aria-hidden="true" />
 
         <div className="px-4 pb-4">
-          <div className="-mt-12 flex items-end justify-between gap-3">
+          <div className="-mt-12 flex flex-wrap items-end justify-between gap-3">
             <Avatar
               size="xl"
               name={profile.full_name}
               src={avatarUrl}
               className="ring-4 ring-surface"
             />
-            <MessageButton otherId={profile.id} />
+            <div className="flex flex-wrap items-center gap-2">
+              <ConnectButton otherId={profile.id} initial={connectionState} />
+              <MessageButton otherId={profile.id} />
+            </div>
           </div>
 
           <h1 className="mt-3 text-xl font-bold text-text">
@@ -163,6 +176,7 @@ export default async function MemberProfilePage({
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <Chip tone="brand">{t("approvedChip")}</Chip>
+            <Chip>{t("connectionsCount", { count: connectionCount })}</Chip>
             {profile.role === "admin" ? (
               <Chip tone="accent">{t("adminChip")}</Chip>
             ) : null}
@@ -197,6 +211,7 @@ export default async function MemberProfilePage({
                 }}
                 me={{
                   id: viewer.id,
+                  username: viewer.username,
                   fullName: viewer.full_name,
                   avatarUrl: viewerAvatarUrl,
                 }}

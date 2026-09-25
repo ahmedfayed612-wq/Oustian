@@ -121,12 +121,21 @@ export default async function NotificationsPage() {
               const message =
                 row.type === "post_comment"
                   ? t("commented", { name: actorName })
-                  : t("liked", { name: actorName });
+                  : row.type === "connection_request"
+                    ? t("connectRequest", { name: actorName })
+                    : t("liked", { name: actorName });
+
+              // Connection requests land on the requester's profile;
+              // everything else still leads back to the feed.
+              const href =
+                row.type === "connection_request" && actor?.username
+                  ? `/profile/${actor.username}`
+                  : "/";
 
               return (
                 <li key={row.id}>
                   <Link
-                    href="/"
+                    href={href}
                     className={cn(
                       "flex items-start gap-3 px-4 py-3 transition-colors hover:bg-surface-2",
                       !row.read_at && "bg-brand-soft/50",

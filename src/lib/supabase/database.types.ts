@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      connections: {
+        Row: {
+          addressee_id: string
+          created_at: string
+          id: string
+          requester_id: string
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          addressee_id: string
+          created_at?: string
+          id?: string
+          requester_id: string
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          addressee_id?: string
+          created_at?: string
+          id?: string
+          requester_id?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connections_addressee_id_fkey"
+            columns: ["addressee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connections_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_members: {
         Row: {
           conversation_id: string
@@ -315,6 +357,7 @@ export type Database = {
           body: string
           created_at: string
           id: string
+          parent_id: string | null
           post_id: string
         }
         Insert: {
@@ -322,6 +365,7 @@ export type Database = {
           body: string
           created_at?: string
           id?: string
+          parent_id?: string | null
           post_id: string
         }
         Update: {
@@ -329,6 +373,7 @@ export type Database = {
           body?: string
           created_at?: string
           id?: string
+          parent_id?: string | null
           post_id?: string
         }
         Relationships: [
@@ -337,6 +382,13 @@ export type Database = {
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "post_comments"
             referencedColumns: ["id"]
           },
           {
@@ -547,6 +599,10 @@ export type Database = {
           other_username: string
           unread_count: number
         }[]
+      }
+      set_connection: {
+        Args: { p_action: string; p_other: string }
+        Returns: string
       }
       start_conversation: { Args: { p_other: string }; Returns: string }
     }

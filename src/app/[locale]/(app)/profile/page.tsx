@@ -6,6 +6,11 @@ import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { requireApprovedMember } from "@/features/auth/session";
+import { ConnectButton } from "@/features/connections/connect-button";
+import {
+  listConnectionCount,
+  listIncomingRequests,
+} from "@/features/connections/queries";
 import { PostCard } from "@/features/feed/post-card";
 import { listAuthorPosts } from "@/features/feed/queries";
 import { Link } from "@/i18n/navigation";
@@ -32,11 +37,17 @@ export default async function ProfilePage() {
   const supabase = await createClient();
   const posts = await listAuthorPosts(supabase, profile.id, profile.id);
 
-  // One batched Storage call signs this member's avatar and every post
-  // author's avatar (usually the same path repeated) in a single round trip.
+  const [connectionCount, requests] = await Promise.all([
+    listConnectionCount(supabase, profile.id),
+    listIncomingRequests(supabase, profile.id),
+  ]);
+
+  // One batched Storage call signs this member's avatar, every post author's
+  // avatar (usually the same path repeated) and each pending requester.
   const avatarUrls = await signedStorageUrls(supabase, [
     profile.avatar_path,
     ...posts.map((item) => item.author.avatarPath),
+    ...requests.map((person) => person.avatar_path),
   ]);
   const avatarUrl = profile.avatar_path
     ? (avatarUrls[profile.avatar_path] ?? null)
@@ -110,6 +121,7 @@ export default async function ProfilePage() {
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <Chip tone="brand">{t("approvedChip")}</Chip>
+            <Chip>{t("connectionsCount", { count: connectionCount })}</Chip>
             {profile.role === "admin" ? (
               <Chip tone="accent">{t("adminChip")}</Chip>
             ) : null}
@@ -120,6 +132,47 @@ export default async function ProfilePage() {
           </div>
         </div>
       </Card>
+
+      {requests.length > 0 ? (
+        <Card className="p-4">
+          <h2 className="text-[0.9375rem] font-semibold text-text">
+            {t("requestsTitle")}
+          </h2>
+
+          <ul className="mt-3 flex flex-col gap-3">
+            {requests.map((person) => (
+              <li key={person.id} className="flex items-center gap-3">
+                <Link
+                  href={`/profile/${person.username}`}
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-control transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"
+                >
+                  <Avatar
+                    size="sm"
+                    name={person.full_name}
+                    src={
+                      person.avatar_path
+                        ? (avatarUrls[person.avatar_path] ?? null)
+                        : null
+                    }
+                  />
+                  <span className="min-w-0 flex flex-col">
+                    <span className="block truncate text-sm font-semibold text-text">
+                      {person.full_name}
+                    </span>
+                    <span
+                      className="block truncate text-xs text-muted"
+                      dir="ltr"
+                    >
+                      @{person.username}
+                    </span>
+                  </span>
+                </Link>
+                <ConnectButton otherId={person.id} initial="incoming" />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
 
       <section className="flex flex-col gap-3">
         <h2 className="text-base font-bold text-text">{t("postsTitle")}</h2>
@@ -145,6 +198,7 @@ export default async function ProfilePage() {
                 }}
                 me={{
                   id: profile.id,
+                  username: profile.username,
                   fullName: profile.full_name,
                   avatarUrl,
                 }}

@@ -58,10 +58,27 @@
   "Rail": {
     "suggestionsTitle": "People you may know",
     "suggestionsBody": "Connect with students from your faculty and year.",
-    "connect": "Connect",
+    "suggestionsEmpty": "You're all caught up — every new face here is already connected.",
     "campusBody": "The private app for Obour University for Science and Technology students — invite codes and manual approval only.",
     "aboutTitle": "Why invite-only?",
     "aboutBody": "Every account is reviewed by hand, so your feed stays full of real OUST students."
+  },
+  "Connect": {
+    "connect": "Connect",
+    "pending": "Pending",
+    "accept": "Accept",
+    "decline": "Decline",
+    "connected": "Connected",
+    "working": "Updating…",
+    "cancelConfirm": "Cancel this connection request?",
+    "disconnectConfirm": "Remove this connection?",
+    "errors": {
+      "not_authorised": "You do not have access to that.",
+      "invalid_profile": "You can't connect with this member.",
+      "invalid_action": "That action isn't available any more.",
+      "too_many_attempts": "Too many tries — give it a few minutes.",
+      "failed": "Couldn't update the connection — please try again."
+    }
   },
   "ProfileCard": {
     "fallbackName": "Your profile",
@@ -194,6 +211,8 @@
     "postsEmptyBody": "Share an update — it will show up right here.",
     "postsOfEmptyTitle": "No posts yet",
     "postsOfEmptyBody": "{name} hasn't shared anything yet.",
+    "connectionsCount": "{count, plural, one {# connection} other {# connections}}",
+    "requestsTitle": "Connection requests",
     "save": "Save changes",
     "saving": "Saving…",
     "avatar": {
@@ -305,6 +324,9 @@
     "noComments": "No comments yet",
     "writeComment": "Write a comment…",
     "sendComment": "Comment",
+    "reply": "Reply",
+    "replyTo": "Reply to {name}",
+    "cancelReply": "Cancel reply",
     "commentTooLong": "Comments can be up to 1000 characters",
     "commentFailed": "Couldn't post your comment — please try again."
   },
@@ -337,11 +359,12 @@
   },
   "Notifications": {
     "title": "Notifications",
-    "description": "Likes and comments on your posts.",
+    "description": "Likes, comments and connection requests.",
     "emptyTitle": "Nothing yet",
-    "emptyBody": "When someone likes or comments on your post, it shows up here.",
+    "emptyBody": "When someone likes, comments or wants to connect, it shows up here.",
     "liked": "{name} liked your post",
     "commented": "{name} commented on your post",
+    "connectRequest": "{name} wants to connect",
     "onYourPost": "“{snippet}”",
     "someone": "Someone"
   },

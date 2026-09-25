@@ -58,10 +58,27 @@
   "Rail": {
     "suggestionsTitle": "أشخاص ممكن تعرفهم",
     "suggestionsBody": "اتواصل مع طلبة من كليتك وسنتك.",
-    "connect": "اتصال",
+    "suggestionsEmpty": "تمام كده — كل الوجوه الجديدة هنا متصل بيها.",
     "campusBody": "التطبيق الخاص لطلبة جامعة العبور للعلوم والتكنولوجيا — بكود دعوة وموافقة يدوية بس.",
     "aboutTitle": "ليه بالدعوة بس؟",
     "aboutBody": "كل حساب بيتم مراجعته يدويًا، فاللي بتشوفه دايمًا طلبة حقيقيين من الجامعة."
+  },
+  "Connect": {
+    "connect": "اتصل",
+    "pending": "تم الإرسال",
+    "accept": "قبول",
+    "decline": "رفض",
+    "connected": "متصِل",
+    "working": "جاري التحديث…",
+    "cancelConfirm": "نلغي طلب الاتصال ده؟",
+    "disconnectConfirm": "نشيل الاتصال ده؟",
+    "errors": {
+      "not_authorised": "مالكش صلاحية على ده.",
+      "invalid_profile": "مينفعش تتصل بالعضو ده.",
+      "invalid_action": "الإجراء ده مبقاش متاح.",
+      "too_many_attempts": "محاولات كتير — استنى كام دقيقة.",
+      "failed": "مجاش نحدّث الاتصال — جرّب تاني."
+    }
   },
   "ProfileCard": {
     "fallbackName": "حسابك",
@@ -194,6 +211,8 @@
     "postsEmptyBody": "شارك تحديث — وهيظهر هنا.",
     "postsOfEmptyTitle": "مفيش بوستات لسه",
     "postsOfEmptyBody": "{name} لسه ماشاركش أي حاجة.",
+    "connectionsCount": "{count, plural, zero {مفيش اتصالات} one {اتصال واحد} two {اتصالان} few {# اتصالات} many {# اتصالاً} other {# اتصال}}",
+    "requestsTitle": "طلبات الاتصال",
     "save": "حفظ التعديلات",
     "saving": "جاري الحفظ…",
     "avatar": {
@@ -305,6 +324,9 @@
     "noComments": "مفيش تعليقات لسه",
     "writeComment": "اكتب تعليقًا…",
     "sendComment": "تعليق",
+    "reply": "رد",
+    "replyTo": "رد على {name}",
+    "cancelReply": "إلغاء الرد",
     "commentTooLong": "التعليق لحد ١٠٠٠ حرف",
     "commentFailed": "تعذّر نشر التعليق — حاول مرة أخرى."
   },
@@ -337,11 +359,12 @@
   },
   "Notifications": {
     "title": "الإشعارات",
-    "description": "إعجابات وتعليقات على بوستاتك.",
+    "description": "إعجابات وتعليقات وطلبات اتصال.",
     "emptyTitle": "لسه مفيش حاجة",
-    "emptyBody": "لما حد يعجب ببوستك أو يعلّق عليه، الإشعارات هتظهر هنا.",
+    "emptyBody": "لما حد يعجب ببوستك أو يعلّق عليه أو يطلب يتصل بيك، الإشعارات هتظهر هنا.",
     "liked": "{name} أعجب ببوستك",
     "commented": "{name} علّق على بوستك",
+    "connectRequest": "{name} عايز يتصل بيك",
     "onYourPost": "«{snippet}»",
     "someone": "شخص ما"
   },

@@ -52,6 +52,7 @@ export default async function HomePage() {
               }}
               me={{
                 id: viewer.id,
+                username: viewer.username,
                 fullName: viewer.full_name,
                 avatarUrl: viewer.avatar_path
                   ? (avatarUrls[viewer.avatar_path] ?? null)
