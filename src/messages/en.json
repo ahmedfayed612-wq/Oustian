@@ -10,6 +10,7 @@
   },
   "Common": {
     "skipToContent": "Skip to content",
+    "loading": "Loading…",
     "comingSoon": "Coming soon",
     "inProgress": "We're building this screen right now — it ships in an upcoming update."
   },
@@ -187,8 +188,12 @@
     "privacyLabel": "Private profile",
     "privacyHint": "Only admins can see your bio, faculty and year. Your name, photo and username stay visible so classmates can find you and message you.",
     "privateNotice": "This profile is private — only admins can see these details.",
-    "postsSoonTitle": "Your posts will live here",
-    "postsSoonBody": "The feed arrives in the next milestone — then your photos, polls and events show up on this page.",
+    "postsTitle": "Your posts",
+    "postsOfTitle": "{name}'s posts",
+    "postsEmptyTitle": "No posts yet",
+    "postsEmptyBody": "Share an update — it will show up right here.",
+    "postsOfEmptyTitle": "No posts yet",
+    "postsOfEmptyBody": "{name} hasn't shared anything yet.",
     "save": "Save changes",
     "saving": "Saving…",
     "avatar": {

@@ -1,15 +1,18 @@
 import { cache } from "react";
-import { CalendarDays, GraduationCap, Lock, UserRound } from "lucide-react";
+import { CalendarDays, GraduationCap, Lock, PenLine, UserRound } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Avatar } from "@/components/ui/Avatar";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { requireApprovedMember } from "@/features/auth/session";
 import { MessageButton } from "@/features/chat/message-button";
+import { PostCard } from "@/features/feed/post-card";
+import { listAuthorPosts } from "@/features/feed/queries";
 import { facultyOptions } from "@/lib/profile-options";
 import { createClient } from "@/lib/supabase/server";
-import { signedStorageUrl } from "@/lib/supabase/storage";
+import { signedStorageUrls } from "@/lib/supabase/storage";
 
 const usernamePattern = /^[a-z0-9_]{3,24}$/i;
 
@@ -70,7 +73,21 @@ export default async function MemberProfilePage({
   if (profile.id === viewer.id) redirect(`/${locale}/profile`);
 
   const supabase = await createClient();
-  const avatarUrl = await signedStorageUrl(supabase, profile.avatar_path);
+  const posts = await listAuthorPosts(supabase, profile.id, viewer.id);
+
+  // One batched Storage call signs this member's avatar, the viewer's avatar
+  // (the `PostCard` composer) and every post author's avatar together.
+  const avatarUrls = await signedStorageUrls(supabase, [
+    profile.avatar_path,
+    viewer.avatar_path,
+    ...posts.map((item) => item.author.avatarPath),
+  ]);
+  const avatarUrl = profile.avatar_path
+    ? (avatarUrls[profile.avatar_path] ?? null)
+    : null;
+  const viewerAvatarUrl = viewer.avatar_path
+    ? (avatarUrls[viewer.avatar_path] ?? null)
+    : null;
 
   const canSeeDetails = !profile.is_private || viewer.role === "admin";
 
@@ -154,15 +171,44 @@ export default async function MemberProfilePage({
         </div>
       </Card>
 
-      <Card className="flex flex-col items-center gap-2 p-6 text-center">
-        <span className="flex size-12 items-center justify-center rounded-pill bg-surface-2 text-muted">
-          <UserRound className="size-6" aria-hidden="true" />
-        </span>
-        <p className="text-[0.9375rem] font-semibold text-text">
-          {t("postsSoonTitle")}
-        </p>
-        <p className="max-w-sm text-sm text-muted">{t("postsSoonBody")}</p>
-      </Card>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-base font-bold text-text">
+          {t("postsOfTitle", { name: profile.full_name })}
+        </h2>
+
+        {posts.length === 0 ? (
+          <EmptyState
+            icon={<PenLine className="size-6" aria-hidden="true" />}
+            title={t("postsOfEmptyTitle")}
+            description={t("postsOfEmptyBody", { name: profile.full_name })}
+          />
+        ) : (
+          <div className="flex flex-col gap-3">
+            {posts.map((item) => (
+              <PostCard
+                key={item.post.id}
+                post={item.post}
+                author={{
+                  username: item.author.username,
+                  fullName: item.author.fullName,
+                  avatarUrl: item.author.avatarPath
+                    ? (avatarUrls[item.author.avatarPath] ?? null)
+                    : null,
+                }}
+                me={{
+                  id: viewer.id,
+                  fullName: viewer.full_name,
+                  avatarUrl: viewerAvatarUrl,
+                }}
+                initialLiked={item.likedByMe}
+                initialLikeCount={item.likeCount}
+                initialCommentCount={item.commentCount}
+                canDelete={viewer.role === "admin"}
+              />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

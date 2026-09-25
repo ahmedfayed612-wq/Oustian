@@ -25,16 +25,21 @@ export const getSessionState = cache(async (): Promise<SessionState> => {
 
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // getClaims() verifies the access token locally against the project's
+    // asymmetric signing keys (JWKS cached process-wide) instead of paying a
+    // network round trip to Auth on every render like getUser() did. A token
+    // that is about to expire is refreshed first; anything invalid resolves to
+    // "anonymous". Authorization itself is still enforced by RLS on every data
+    // read and by the profile status below, so a forged cookie gets nothing.
+    const { data, error } = await supabase.auth.getClaims();
+    const userId = data?.claims?.sub;
 
-    if (!user) return { status: "anonymous" };
+    if (error || !userId) return { status: "anonymous" };
 
     const { data: profile } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", user.id)
+      .eq("id", userId)
       .maybeSingle();
 
     // A session without a profile means the signup trigger never ran (or the

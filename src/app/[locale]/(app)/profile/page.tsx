@@ -1,14 +1,17 @@
-import { CalendarDays, GraduationCap, Mail, UserRound } from "lucide-react";
+import { CalendarDays, GraduationCap, PenLine, UserRound } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Avatar } from "@/components/ui/Avatar";
 import { buttonClasses } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { requireApprovedMember } from "@/features/auth/session";
+import { PostCard } from "@/features/feed/post-card";
+import { listAuthorPosts } from "@/features/feed/queries";
 import { Link } from "@/i18n/navigation";
 import { facultyOptions } from "@/lib/profile-options";
 import { createClient } from "@/lib/supabase/server";
-import { signedStorageUrl } from "@/lib/supabase/storage";
+import { signedStorageUrls } from "@/lib/supabase/storage";
 
 export async function generateMetadata() {
   const t = await getTranslations("Profile");
@@ -17,9 +20,9 @@ export async function generateMetadata() {
 }
 
 /**
- * The member's own profile: an intro card in the LinkedIn idiom plus an honest
- * "nothing to show yet" panel (posts arrive in M3 — better a real empty state
- * than invented counters).
+ * The member's own profile: an intro card in the LinkedIn idiom followed by
+ * "Your posts" — the same `PostCard` the feed renders, so likes, comments and
+ * deletion behave exactly as they do on the home feed.
  */
 export default async function ProfilePage() {
   const profile = await requireApprovedMember();
@@ -27,7 +30,17 @@ export default async function ProfilePage() {
   const t = await getTranslations("Profile");
 
   const supabase = await createClient();
-  const avatarUrl = await signedStorageUrl(supabase, profile.avatar_path);
+  const posts = await listAuthorPosts(supabase, profile.id, profile.id);
+
+  // One batched Storage call signs this member's avatar and every post
+  // author's avatar (usually the same path repeated) in a single round trip.
+  const avatarUrls = await signedStorageUrls(supabase, [
+    profile.avatar_path,
+    ...posts.map((item) => item.author.avatarPath),
+  ]);
+  const avatarUrl = profile.avatar_path
+    ? (avatarUrls[profile.avatar_path] ?? null)
+    : null;
 
   const faculty = facultyOptions.find(
     (option) => option.value === profile.faculty,
@@ -108,15 +121,45 @@ export default async function ProfilePage() {
         </div>
       </Card>
 
-      <Card className="flex flex-col items-center gap-2 p-6 text-center">
-        <span className="flex size-12 items-center justify-center rounded-pill bg-surface-2 text-muted">
-          <Mail className="size-6" aria-hidden="true" />
-        </span>
-        <p className="text-[0.9375rem] font-semibold text-text">
-          {t("postsSoonTitle")}
-        </p>
-        <p className="max-w-sm text-sm text-muted">{t("postsSoonBody")}</p>
-      </Card>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-base font-bold text-text">{t("postsTitle")}</h2>
+
+        {posts.length === 0 ? (
+          <EmptyState
+            icon={<PenLine className="size-6" aria-hidden="true" />}
+            title={t("postsEmptyTitle")}
+            description={t("postsEmptyBody")}
+          />
+        ) : (
+          <div className="flex flex-col gap-3">
+            {posts.map((item) => (
+              <PostCard
+                key={item.post.id}
+                post={item.post}
+                author={{
+                  username: item.author.username,
+                  fullName: item.author.fullName,
+                  avatarUrl: item.author.avatarPath
+                    ? (avatarUrls[item.author.avatarPath] ?? null)
+                    : null,
+                }}
+                me={{
+                  id: profile.id,
+                  fullName: profile.full_name,
+                  avatarUrl,
+                }}
+                initialLiked={item.likedByMe}
+                initialLikeCount={item.likeCount}
+                initialCommentCount={item.commentCount}
+                canDelete={
+                  item.post.author_id === profile.id ||
+                  profile.role === "admin"
+                }
+              />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

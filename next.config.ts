@@ -53,6 +53,18 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  experimental: {
+    // How long the client router may reuse an already-fetched RSC payload.
+    // Default is 0 for dynamic routes, which meant every click — even Back
+    // and re-visits seconds later — re-rendered the whole route on the server
+    // before anything changed on screen. 30s makes navigation feel instant
+    // while keeping the feed effectively live; mutations still invalidate via
+    // `router.refresh()` / server actions, so nothing user-driven goes stale.
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
+  },
   images: {
     remotePatterns: supabaseStoragePatterns(),
     // Storage paths are unique per upload, so objects never change under a

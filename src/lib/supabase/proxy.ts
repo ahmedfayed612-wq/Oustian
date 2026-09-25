@@ -42,8 +42,13 @@ export async function refreshSupabaseSession(
   });
 
   try {
-    // getClaims()/getUser() is what actually refreshes an expired token.
-    await supabase.auth.getUser();
+    // getClaims() verifies the access token locally (asymmetric signing keys,
+    // JWKS cached process-wide) and only reaches the network to refresh a
+    // session that is about to expire. Unlike getUser() — which round-tripped
+    // to Auth on every single request — this is effectively free on the hot
+    // path, which matters because each request used to pay a full
+    // transatlantic trip before a page could start rendering.
+    await supabase.auth.getClaims();
   } catch (error) {
     // Never let an auth outage take the whole site down — the request still
     // renders, just without a session.

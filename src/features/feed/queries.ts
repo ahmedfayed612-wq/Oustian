@@ -30,23 +30,18 @@ export type FeedComment = {
   };
 };
 
-export async function listFeedPosts(
+/**
+ * Hydrates raw `posts` rows with author, like and comment counts in three
+ * batched queries. Shared by the home feed (every post) and the profile
+ * screens (one member's posts), so both render the exact same `FeedPost`
+ * shape and `PostCard` props.
+ */
+async function hydrateFeedPosts(
   supabase: SupabaseClient<Database>,
+  posts: Tables<"posts">[],
   viewerId: string,
-  limit = 30,
 ): Promise<FeedPost[]> {
-  const { data: posts, error } = await supabase
-    .from("posts")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    console.error("[feed] posts read failed", error.message);
-    return [];
-  }
-
-  if (!posts || posts.length === 0) return [];
+  if (posts.length === 0) return [];
 
   const postIds = posts.map((post) => post.id);
   const authorIds = [...new Set(posts.map((post) => post.author_id))];
@@ -106,6 +101,52 @@ export async function listFeedPosts(
     likedByMe: likedPostIds.has(post.id),
     commentCount: commentCounts.get(post.id) ?? 0,
   }));
+}
+
+export async function listFeedPosts(
+  supabase: SupabaseClient<Database>,
+  viewerId: string,
+  limit = 30,
+): Promise<FeedPost[]> {
+  const { data: posts, error } = await supabase
+    .from("posts")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("[feed] posts read failed", error.message);
+    return [];
+  }
+
+  return hydrateFeedPosts(supabase, posts ?? [], viewerId);
+}
+
+/**
+ * One member's posts, newest first — the list both profile screens render
+ * under their posts section. Backed by `posts_author_idx (author_id,
+ * created_at DESC)`, so it stays an index scan as the table grows. RLS
+ * already scopes visibility (`posts_select`), the author filter only narrows.
+ */
+export async function listAuthorPosts(
+  supabase: SupabaseClient<Database>,
+  authorId: string,
+  viewerId: string,
+  limit = 30,
+): Promise<FeedPost[]> {
+  const { data: posts, error } = await supabase
+    .from("posts")
+    .select("*")
+    .eq("author_id", authorId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("[feed] author posts read failed", error.message);
+    return [];
+  }
+
+  return hydrateFeedPosts(supabase, posts ?? [], viewerId);
 }
 
 /** Comments for one post, oldest first, authors resolved in one extra query. */
