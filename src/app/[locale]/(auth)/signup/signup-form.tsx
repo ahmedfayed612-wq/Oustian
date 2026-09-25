@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Card } from "@/components/ui/Card";
 import { Field, inputClasses, selectClasses } from "@/components/ui/Field";
@@ -8,7 +9,12 @@ import { FormMessage } from "@/components/ui/FormMessage";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { initialActionState } from "@/features/auth/action-state";
 import { checkInviteCodeAction, signUpAction } from "@/features/auth/actions";
-import { actionMessage, fieldMessage } from "@/features/auth/form-messages";
+import { actionMessage } from "@/features/auth/form-messages";
+import {
+  formDataToObject,
+  invalidFields,
+  signUpSchema,
+} from "@/features/auth/validation";
 
 type Option = { value: string; label: string };
 
@@ -35,6 +41,10 @@ export function SignUpForm({
   const t = useTranslations("Auth");
   const [state, formAction] = useActionState(signUpAction, initialActionState);
   const [invite, setInvite] = useState<InviteState>({ state: "idle" });
+  // Fields the browser rejected, and fields edited since the last reply: the
+  // two together keep a stale message from outliving the value it was about.
+  const [clientFields, setClientFields] = useState<string[]>([]);
+  const [dirtyFields, setDirtyFields] = useState<string[]>([]);
   const message = actionMessage(t, state);
 
   async function verifyInviteCode(value: string) {
@@ -67,14 +77,72 @@ export function SignUpForm({
           ? t("common.working")
           : t("signup.inviteHint");
 
-  const inviteServerError = fieldMessage(t, state, "invite_code");
+  /** Whether a field should show a message, from either validator. */
+  function flagged(name: string) {
+    return (
+      clientFields.includes(name) ||
+      (state.fields?.includes(name) === true && !dirtyFields.includes(name))
+    );
+  }
+
+  function fieldError(name: string) {
+    if (!flagged(name)) return undefined;
+
+    const key = `fields.${name}`;
+
+    return t.has(key) ? t(key) : t("errors.invalid_input");
+  }
+
+  /**
+   * The action validates the same schema, but running it here first answers a
+   * mistyped username or email instantly — and without the round trip that
+   * resets the form. React clears every input once a form action finishes,
+   * error return included, so a server-side rejection used to hand the member
+   * an empty form with two red errors under it.
+   */
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    setDirtyFields([]);
+
+    const parsed = signUpSchema.safeParse(
+      formDataToObject(new FormData(event.currentTarget)),
+    );
+
+    if (parsed.success) {
+      setClientFields([]);
+      return;
+    }
+
+    event.preventDefault();
+    setClientFields(invalidFields(parsed.error));
+  }
+
+  /** Editing a field clears its message, so a fixed value stops looking wrong. */
+  function handleFieldEdit(event: ChangeEvent<HTMLFormElement>) {
+    // The event bubbles up from the control that changed, so its `name` is the
+    // field to forgive — read through `Element` because the form's own type
+    // describes `target` as the form.
+    const name = (event.target as Element).getAttribute("name") ?? "";
+
+    if (name === "") return;
+
+    setClientFields((fields) => fields.filter((field) => field !== name));
+    setDirtyFields((fields) =>
+      fields.includes(name) ? fields : [...fields, name],
+    );
+  }
 
   return (
     <Card className="p-5 sm:p-6">
       <h1 className="text-xl font-bold text-text">{t("signup.title")}</h1>
       <p className="mt-1 text-sm text-muted">{t("signup.subtitle")}</p>
 
-      <form action={formAction} className="mt-5 flex flex-col gap-4" noValidate>
+      <form
+        action={formAction}
+        onSubmit={handleSubmit}
+        onChange={handleFieldEdit}
+        className="mt-5 flex flex-col gap-4"
+        noValidate
+      >
         {message ? (
           <FormMessage tone={message.tone}>{message.text}</FormMessage>
         ) : null}
@@ -89,7 +157,7 @@ export function SignUpForm({
               : inviteText
           }
           error={
-            inviteServerError ??
+            fieldError("invite_code") ??
             (invite.state === "invalid" ? inviteText : undefined)
           }
         >
@@ -102,7 +170,10 @@ export function SignUpForm({
             autoComplete="off"
             spellCheck={false}
             placeholder="OUST-FOUNDERS-2026"
-            aria-invalid={invite.state === "invalid" || undefined}
+            defaultValue={state.values?.invite_code}
+            aria-invalid={
+              flagged("invite_code") || invite.state === "invalid" || undefined
+            }
             className={inputClasses}
             onBlur={(event) => void verifyInviteCode(event.target.value)}
           />
@@ -115,7 +186,7 @@ export function SignUpForm({
         <Field
           htmlFor="full_name"
           label={t("signup.fullName")}
-          error={fieldMessage(t, state, "full_name")}
+          error={fieldError("full_name")}
         >
           <input
             id="full_name"
@@ -123,6 +194,8 @@ export function SignUpForm({
             type="text"
             required
             autoComplete="name"
+            defaultValue={state.values?.full_name}
+            aria-invalid={flagged("full_name") || undefined}
             className={inputClasses}
           />
         </Field>
@@ -131,7 +204,7 @@ export function SignUpForm({
           htmlFor="username"
           label={t("signup.username")}
           description={t("signup.usernameHint")}
-          error={fieldMessage(t, state, "username")}
+          error={fieldError("username")}
         >
           <input
             id="username"
@@ -140,7 +213,12 @@ export function SignUpForm({
             required
             dir="ltr"
             autoComplete="username"
+            autoCapitalize="none"
+            autoCorrect="off"
             spellCheck={false}
+            maxLength={24}
+            defaultValue={state.values?.username}
+            aria-invalid={flagged("username") || undefined}
             className={inputClasses}
           />
         </Field>
@@ -148,7 +226,7 @@ export function SignUpForm({
         <Field
           htmlFor="email"
           label={t("signup.email")}
-          error={fieldMessage(t, state, "email")}
+          error={fieldError("email")}
         >
           <input
             id="email"
@@ -157,6 +235,10 @@ export function SignUpForm({
             required
             dir="ltr"
             autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            defaultValue={state.values?.email}
+            aria-invalid={flagged("email") || undefined}
             className={inputClasses}
           />
         </Field>
@@ -165,7 +247,7 @@ export function SignUpForm({
           htmlFor="password"
           label={t("signup.password")}
           description={t("signup.passwordHint")}
-          error={fieldMessage(t, state, "password")}
+          error={fieldError("password")}
         >
           <input
             id="password"
@@ -174,6 +256,7 @@ export function SignUpForm({
             required
             dir="ltr"
             autoComplete="new-password"
+            aria-invalid={flagged("password") || undefined}
             className={inputClasses}
           />
         </Field>
@@ -183,7 +266,7 @@ export function SignUpForm({
             <select
               id="faculty"
               name="faculty"
-              defaultValue=""
+              defaultValue={state.values?.faculty ?? ""}
               className={selectClasses}
             >
               <option value="">{t("signup.facultyPlaceholder")}</option>
@@ -199,7 +282,7 @@ export function SignUpForm({
             <select
               id="graduation_year"
               name="graduation_year"
-              defaultValue=""
+              defaultValue={state.values?.graduation_year ?? ""}
               className={selectClasses}
             >
               <option value="">{t("signup.graduationYearPlaceholder")}</option>

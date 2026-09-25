@@ -92,7 +92,7 @@
       "inviteValid": "Code accepted — still unused.",
       "fullName": "Full name",
       "username": "Username",
-      "usernameHint": "3-24 characters: a-z, 0-9 and underscore. This is how people find you.",
+      "usernameHint": "3-24 characters: a-z, 0-9 and underscore — no dots, dashes or spaces. This is how people find you.",
       "email": "University or personal email",
       "password": "Password",
       "passwordHint": "At least 8 characters.",
@@ -152,10 +152,10 @@
       "invite_created": "Invite code saved."
     },
     "fields": {
-      "email": "Enter a valid email address.",
+      "email": "Enter a valid email address, such as name@gmail.com.",
       "password": "At least 8 characters.",
       "full_name": "Use your real name (2-80 characters).",
-      "username": "3-24 characters: a-z, 0-9 and underscore.",
+      "username": "3-24 characters: a-z, 0-9 and underscore — no dots, dashes or spaces.",
       "invite_code": "Uppercase letters, numbers and dashes.",
       "bio": "Keep it under 280 characters."
     }

@@ -63,6 +63,17 @@ export type SignInInput = z.infer<typeof signInSchema>;
 export type ProfileInput = z.infer<typeof profileSchema>;
 export type InviteCodeCreateInput = z.infer<typeof inviteCodeCreateSchema>;
 
+/**
+ * Field names that failed validation, in the shape `ActionState.fields` uses.
+ * Shared so the browser and the server flag the same inputs: the signup form
+ * runs `signUpSchema` itself before it spends a round trip on the action.
+ */
+export function invalidFields(error: z.ZodError): string[] {
+  return error.issues
+    .map((issue) => String(issue.path[0] ?? ""))
+    .filter((name) => name !== "");
+}
+
 /** Turns `""` into `undefined` so optional fields behave in HTML forms. */
 export function emptyToUndefined(value: FormDataEntryValue | null) {
   const text = typeof value === "string" ? value.trim() : "";

@@ -16,16 +16,44 @@ import { toAuthErrorCode } from "./errors";
 import { getSessionState } from "./session";
 import {
   formDataToObject,
+  invalidFields,
   inviteCodeSchema,
   profileSchema,
   signInSchema,
   signUpSchema,
 } from "./validation";
 
-function invalidFields(error: { issues: { path: PropertyKey[] }[] }) {
-  return error.issues
-    .map((issue) => String(issue.path[0] ?? ""))
-    .filter((name) => name !== "");
+/**
+ * Values worth handing back to the form when a submit is rejected.
+ *
+ * React resets every input once a form action finishes — an error return
+ * included — and each control is restored to its `defaultValue`. Echoing what
+ * was typed through `ActionState.values` is therefore what keeps a rejected
+ * signup from emptying the form under the error messages. Passwords are never
+ * echoed: the browser already has that value, the server does not need to send
+ * it back.
+ */
+const echoedSignUpFields = [
+  "invite_code",
+  "full_name",
+  "username",
+  "email",
+  "faculty",
+  "graduation_year",
+] as const;
+
+const echoedSignInFields = ["email"] as const;
+
+function echoValues(formData: FormData, keys: readonly string[]) {
+  const values: Record<string, string> = {};
+
+  for (const key of keys) {
+    const value = formData.get(key);
+
+    if (typeof value === "string" && value.trim() !== "") values[key] = value;
+  }
+
+  return values;
 }
 
 /**
@@ -44,6 +72,7 @@ export async function signUpAction(
       status: "error",
       code: "invalid_input",
       fields: invalidFields(parsed.error),
+      values: echoValues(formData, echoedSignUpFields),
     };
   }
 
@@ -58,7 +87,11 @@ export async function signUpAction(
   );
 
   if (!withinLimit) {
-    return { status: "error", code: "too_many_attempts" };
+    return {
+      status: "error",
+      code: "too_many_attempts",
+      values: echoValues(formData, echoedSignUpFields),
+    };
   }
 
   const { data, error } = await supabase.auth.signUp({
@@ -79,7 +112,11 @@ export async function signUpAction(
   });
 
   if (error) {
-    return { status: "error", code: toAuthErrorCode(error.message) };
+    return {
+      status: "error",
+      code: toAuthErrorCode(error.message),
+      values: echoValues(formData, echoedSignUpFields),
+    };
   }
 
   // Confirmation disabled on the project: we already have a session.
@@ -103,6 +140,7 @@ export async function signInAction(
       status: "error",
       code: "invalid_input",
       fields: invalidFields(parsed.error),
+      values: echoValues(formData, echoedSignInFields),
     };
   }
 
@@ -116,7 +154,11 @@ export async function signInAction(
   );
 
   if (!withinLimit) {
-    return { status: "error", code: "too_many_attempts" };
+    return {
+      status: "error",
+      code: "too_many_attempts",
+      values: echoValues(formData, echoedSignInFields),
+    };
   }
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -125,7 +167,11 @@ export async function signInAction(
   });
 
   if (error) {
-    return { status: "error", code: toAuthErrorCode(error.message) };
+    return {
+      status: "error",
+      code: toAuthErrorCode(error.message),
+      values: echoValues(formData, echoedSignInFields),
+    };
   }
 
   const locale = await getLocale();
