@@ -63,6 +63,28 @@
     "aboutTitle": "Why invite-only?",
     "aboutBody": "Every account is reviewed by hand, so your feed stays full of real OUST students."
   },
+  "Reactions": {
+    "fire": "Fire",
+    "insight": "Insight",
+    "same": "Same",
+    "talk": "Talk",
+    "groupLabel": "React to this",
+    "reactFire": "React with Fire",
+    "reactInsight": "React with Insight",
+    "reactSame": "React with Same",
+    "reactTalk": "React with Talk",
+    "viewWhoReacted": "See who reacted with {reaction}",
+    "usersTitle": "Reactions",
+    "usersLoading": "Loading reactions…",
+    "usersEmpty": "Nobody yet",
+    "errors": {
+      "not_authorised": "You need an approved account to react.",
+      "invalid_target": "That content is no longer available.",
+      "invalid_reaction": "That reaction isn't available.",
+      "too_many_attempts": "Too many reactions at once — give it a minute.",
+      "failed": "Couldn't save your reaction — please try again."
+    }
+  },
   "Connect": {
     "connect": "Connect",
     "pending": "Pending",
@@ -313,13 +335,10 @@
     }
   },
   "Post": {
-    "like": "Like",
-    "liked": "Liked",
     "comment": "Comment",
     "hideComments": "Hide comments",
     "delete": "Delete post",
     "deleteConfirm": "Delete this post for everyone?",
-    "likesSummary": "{count, plural, one {# like} other {# likes}}",
     "commentsSummary": "{count, plural, one {# comment} other {# comments}}",
     "noComments": "No comments yet",
     "writeComment": "Write a comment…",
@@ -365,6 +384,11 @@
     "liked": "{name} liked your post",
     "commented": "{name} commented on your post",
     "connectRequest": "{name} wants to connect",
+    "reactedToPost": "{name} reacted to your post",
+    "reactedOnPosts": "{name} and others reacted to {count} more of your posts",
+    "talkedAboutPost": "{name} wants to discuss your post",
+    "reactedToComment": "{name} reacted to your comment",
+    "talkedAboutComment": "{name} wants to discuss your comment",
     "onYourPost": "“{snippet}”",
     "someone": "Someone"
   },

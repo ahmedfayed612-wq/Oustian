@@ -202,8 +202,7 @@ export default async function ProfilePage() {
                   fullName: profile.full_name,
                   avatarUrl,
                 }}
-                initialLiked={item.likedByMe}
-                initialLikeCount={item.likeCount}
+                reactions={item.reactions}
                 initialCommentCount={item.commentCount}
                 canDelete={
                   item.post.author_id === profile.id ||

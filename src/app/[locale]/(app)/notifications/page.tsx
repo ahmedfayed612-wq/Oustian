@@ -118,12 +118,30 @@ export default async function NotificationsPage() {
                 ? post.body.slice(0, 90) + (post.body.length > 90 ? "…" : "")
                 : null;
 
-              const message =
-                row.type === "post_comment"
-                  ? t("commented", { name: actorName })
-                  : row.type === "connection_request"
-                    ? t("connectRequest", { name: actorName })
-                    : t("liked", { name: actorName });
+              // One aggregated row per actor and kind (see the reaction
+              // triggers): `reaction_count` says how many of the member''s
+              // posts/comments they reacted to, so the inbox never spams.
+              const extras = row.reaction_count > 1 ? row.reaction_count - 1 : 0;
+              const message = (() => {
+                switch (row.type) {
+                  case "post_comment":
+                    return t("commented", { name: actorName });
+                  case "connection_request":
+                    return t("connectRequest", { name: actorName });
+                  case "post_reaction":
+                    return extras > 0
+                      ? t("reactedOnPosts", { name: actorName, count: extras })
+                      : t("reactedToPost", { name: actorName });
+                  case "post_talk":
+                    return t("talkedAboutPost", { name: actorName });
+                  case "comment_reaction":
+                    return t("reactedToComment", { name: actorName });
+                  case "comment_talk":
+                    return t("talkedAboutComment", { name: actorName });
+                  default:
+                    return t("liked", { name: actorName });
+                }
+              })();
 
               // Connection requests land on the requester's profile;
               // everything else still leads back to the feed.

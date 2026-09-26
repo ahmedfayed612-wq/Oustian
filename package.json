@@ -2,7 +2,7 @@
   "name": "oustians",
   "version": "0.1.0",
   "private": true,
-  "description": "Oustians — the private social app for OUST students.",
+  "description": "Oustians \u2014 the private social app for OUST students.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -16,7 +16,9 @@
     "db:new": "supabase migration new",
     "db:push": "supabase db push",
     "db:reset": "supabase db reset",
-    "db:types": "supabase gen types typescript --linked --schema public > src/lib/supabase/database.types.ts"
+    "db:types": "supabase gen types typescript --linked --schema public > src/lib/supabase/database.types.ts",
+    "test": "node --test src/features/reactions/queries.test.ts",
+    "test:e2e": "node tests/reactions.e2e.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

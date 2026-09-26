@@ -63,6 +63,28 @@
     "aboutTitle": "ليه بالدعوة بس؟",
     "aboutBody": "كل حساب بيتم مراجعته يدويًا، فاللي بتشوفه دايمًا طلبة حقيقيين من الجامعة."
   },
+  "Reactions": {
+    "fire": "تحفيز",
+    "insight": "استفادة",
+    "same": "وأنا كمان",
+    "talk": "نتكلم",
+    "groupLabel": "تفاعل مع ده",
+    "reactFire": "تفاعل بـ تحفيز",
+    "reactInsight": "تفاعل بـ استفادة",
+    "reactSame": "تفاعل بـ وأنا كمان",
+    "reactTalk": "تفاعل بـ نتكلم",
+    "viewWhoReacted": "شوف مين تفاعل بـ {reaction}",
+    "usersTitle": "التفاعلات",
+    "usersLoading": "جاري تحميل التفاعلات…",
+    "usersEmpty": "لسه محدش تفاعل",
+    "errors": {
+      "not_authorised": "لازم حساب معتمد عشان تتفاعل.",
+      "invalid_target": "المحتوى ده مش موجود خلاص.",
+      "invalid_reaction": "التفاعل ده مش متاح.",
+      "too_many_attempts": "تفاعلات كتير مرة واحدة — استنى دقيقة.",
+      "failed": "مجاش نحفظ تفاعلك — جرّب تاني."
+    }
+  },
   "Connect": {
     "connect": "اتصل",
     "pending": "تم الإرسال",
@@ -313,13 +335,10 @@
     }
   },
   "Post": {
-    "like": "إعجاب",
-    "liked": "معجب",
     "comment": "تعليق",
     "hideComments": "إخفاء التعليقات",
     "delete": "حذف المنشور",
     "deleteConfirm": "تحذف المنشور ده للكل؟",
-    "likesSummary": "{count, plural, one {إعجاب واحد} two {إعجابان} few {# إعجابات} other {# إعجاب}}",
     "commentsSummary": "{count, plural, one {تعليق واحد} two {تعليقان} few {# تعليقات} other {# تعليق}}",
     "noComments": "مفيش تعليقات لسه",
     "writeComment": "اكتب تعليقًا…",
@@ -365,6 +384,11 @@
     "liked": "{name} أعجب ببوستك",
     "commented": "{name} علّق على بوستك",
     "connectRequest": "{name} عايز يتصل بيك",
+    "reactedToPost": "{name} تفاعل مع بوستك",
+    "reactedOnPosts": "{name} وغيره تفاعلوا مع {count} بوست تاني ليك",
+    "talkedAboutPost": "{name} عايز يتكلم عن بوستك",
+    "reactedToComment": "{name} تفاعل مع تعليقك",
+    "talkedAboutComment": "{name} عايز يتكلم عن تعليقك",
     "onYourPost": "«{snippet}»",
     "someone": "شخص ما"
   },

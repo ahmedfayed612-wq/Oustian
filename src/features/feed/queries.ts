@@ -1,10 +1,18 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Tables } from "@/lib/supabase/database.types";
+import {
+  commentReactionTotals,
+  EMPTY_REACTIONS,
+  engagementScore,
+  postReactionTotals,
+  type ReactionTotals,
+} from "@/features/reactions/queries";
 
 /**
- * Feed reads. Four round trips on purpose (posts → authors → likes → comment
+ * Feed reads. Batched on purpose (posts → authors → reactions → comment
  * counts) instead of joins the hand-written types can't express: predictable,
- * batched, and each result shape stays fully typed.
+ * no N+1, and each result shape stays fully typed. Reactions arrive as
+ * aggregates (four counts + the viewer's own), never as one row per reaction.
  */
 
 export type FeedPost = {
@@ -15,9 +23,10 @@ export type FeedPost = {
     fullName: string;
     avatarPath: string | null;
   };
-  likeCount: number;
-  likedByMe: boolean;
+  reactions: ReactionTotals;
   commentCount: number;
+  /** Ranking signal: reaction weights plus discussion weight. */
+  score: number;
 };
 
 export type FeedComment = {
@@ -28,6 +37,7 @@ export type FeedComment = {
     fullName: string;
     avatarPath: string | null;
   };
+  reactions: ReactionTotals;
 };
 
 /**
@@ -46,15 +56,12 @@ async function hydrateFeedPosts(
   const postIds = posts.map((post) => post.id);
   const authorIds = [...new Set(posts.map((post) => post.author_id))];
 
-  const [authorsResult, likesResult, commentsResult] = await Promise.all([
+  const [authorsResult, reactions, commentsResult] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, username, full_name, avatar_path")
       .in("id", authorIds),
-    supabase
-      .from("post_likes")
-      .select("post_id, user_id")
-      .in("post_id", postIds),
+    postReactionTotals(supabase, postIds, viewerId),
     supabase.from("post_comments").select("post_id").in("post_id", postIds),
   ]);
 
@@ -70,14 +77,6 @@ async function hydrateFeedPosts(
     ]),
   );
 
-  const likeCounts = new Map<string, number>();
-  const likedPostIds = new Set<string>();
-
-  for (const like of likesResult.data ?? []) {
-    likeCounts.set(like.post_id, (likeCounts.get(like.post_id) ?? 0) + 1);
-    if (like.user_id === viewerId) likedPostIds.add(like.post_id);
-  }
-
   const commentCounts = new Map<string, number>();
 
   for (const comment of commentsResult.data ?? []) {
@@ -87,20 +86,47 @@ async function hydrateFeedPosts(
     );
   }
 
-  return posts.map((post) => ({
-    post,
-    // An author hidden by RLS (suspended mid-session) falls back to a stub so
-    // the post still renders; search/profile reads would show the same truth.
-    author: authorsById.get(post.author_id) ?? {
-      id: post.author_id,
-      username: "",
-      fullName: "",
-      avatarPath: null,
-    },
-    likeCount: likeCounts.get(post.id) ?? 0,
-    likedByMe: likedPostIds.has(post.id),
-    commentCount: commentCounts.get(post.id) ?? 0,
-  }));
+  return posts.map((post) => {
+    const totals = reactions.get(post.id) ?? EMPTY_REACTIONS;
+    const commentCount = commentCounts.get(post.id) ?? 0;
+
+    return {
+      post,
+      // An author hidden by RLS (suspended mid-session) falls back to a stub so
+      // the post still renders; search/profile reads would show the same truth.
+      author: authorsById.get(post.author_id) ?? {
+        id: post.author_id,
+        username: "",
+        fullName: "",
+        avatarPath: null,
+      },
+      reactions: totals,
+      commentCount,
+      score: engagementScore(totals, commentCount),
+    };
+  });
+}
+
+/**
+ * Feed ranking. Engagement (weighted reactions + comments) blended with
+ * recency: a post's score halves every `HALF_LIFE_HOURS`, so the newest posts
+ * lead as they always have, while something genuinely engaged climbs back
+ * above older quiet posts instead of sinking with the clock. The weights
+ * themselves live in `features/reactions/queries.ts` — retuning the ranking
+ * never means touching the database.
+ */
+export function rankFeedPosts(posts: FeedPost[], now = Date.now()): FeedPost[] {
+  const halfLifeMs = 18 * 60 * 60 * 1000;
+
+  function rank(item: FeedPost) {
+    const ageMs = Math.max(0, now - Date.parse(item.post.created_at));
+    const recency = Math.pow(0.5, ageMs / halfLifeMs);
+
+    // +1 so a brand-new post with no reactions still outranks an old one.
+    return (item.score + 1) * recency;
+  }
+
+  return [...posts].sort((a, b) => rank(b) - rank(a));
 }
 
 export async function listFeedPosts(
@@ -149,10 +175,15 @@ export async function listAuthorPosts(
   return hydrateFeedPosts(supabase, posts ?? [], viewerId);
 }
 
-/** Comments for one post, oldest first, authors resolved in one extra query. */
+/**
+ * Comments for one post, oldest first, authors and reaction totals resolved in
+ * two extra batched queries (never per comment). `viewerId` is what makes each
+ * comment's `userReaction` correct for the person reading it.
+ */
 export async function listPostComments(
   supabase: SupabaseClient<Database>,
   postId: string,
+  viewerId: string,
 ): Promise<FeedComment[]> {
   const { data: comments, error } = await supabase
     .from("post_comments")
@@ -169,14 +200,18 @@ export async function listPostComments(
   if (!comments || comments.length === 0) return [];
 
   const authorIds = [...new Set(comments.map((comment) => comment.author_id))];
+  const commentIds = comments.map((comment) => comment.id);
 
-  const { data: authors } = await supabase
-    .from("profiles")
-    .select("id, username, full_name, avatar_path")
-    .in("id", authorIds);
+  const [authorsResult, reactions] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, username, full_name, avatar_path")
+      .in("id", authorIds),
+    commentReactionTotals(supabase, commentIds, viewerId),
+  ]);
 
   const authorsById = new Map(
-    (authors ?? []).map((author) => [
+    (authorsResult.data ?? []).map((author) => [
       author.id,
       {
         id: author.id,
@@ -195,5 +230,6 @@ export async function listPostComments(
       fullName: "",
       avatarPath: null,
     },
+    reactions: reactions.get(comment.id) ?? EMPTY_REACTIONS,
   }));
 }

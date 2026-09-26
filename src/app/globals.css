@@ -206,5 +206,71 @@
 }
 
 @utility pt-safe {
+  /* keeps the top bar clear of the notch / status bar */
   padding-top: env(safe-area-inset-top);
+}
+
+/* ---------------------------------------------------------------------------
+   Reaction micro-animations — the four Oustians reactions each get one small,
+   deliberate 250-400ms movement: fire lifts, insight glows, same joins,
+   talk expands. Nothing loops or bounces, and the global reduced-motion block
+   above already collapses every animation for members who ask for that.
+--------------------------------------------------------------------------- */
+
+@theme inline {
+  --animate-react-fire: react-fire 320ms var(--ease-out-soft);
+  --animate-react-insight: react-insight 360ms var(--ease-out-soft);
+  --animate-react-same: react-same 300ms var(--ease-out-soft);
+  --animate-react-talk: react-talk 320ms var(--ease-out-soft);
+}
+
+@keyframes react-fire {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  35% {
+    transform: translateY(-3px) scale(1.18);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes react-insight {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  40% {
+    transform: scale(1.14);
+    filter: brightness(1.35);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+@keyframes react-same {
+  0% {
+    transform: scale(0.82);
+  }
+  55% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes react-talk {
+  0% {
+    transform: scale(0.94) translateX(-1px);
+  }
+  50% {
+    transform: scale(1.12) translateX(1px);
+  }
+  100% {
+    transform: scale(1) translateX(0);
+  }
 }

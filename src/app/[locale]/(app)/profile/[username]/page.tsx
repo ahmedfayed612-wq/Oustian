@@ -215,8 +215,7 @@ export default async function MemberProfilePage({
                   fullName: viewer.full_name,
                   avatarUrl: viewerAvatarUrl,
                 }}
-                initialLiked={item.likedByMe}
-                initialLikeCount={item.likeCount}
+                reactions={item.reactions}
                 initialCommentCount={item.commentCount}
                 canDelete={viewer.role === "admin"}
               />

@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      comment_reactions: {
+        Row: {
+          comment_id: string
+          created_at: string
+          reaction: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          reaction: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          reaction?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_reactions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "post_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comment_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       connections: {
         Row: {
           addressee_id: string
@@ -305,6 +344,7 @@ export type Database = {
           created_at: string
           id: string
           post_id: string | null
+          reaction_count: number
           read_at: string | null
           recipient_id: string
           type: string
@@ -314,6 +354,7 @@ export type Database = {
           created_at?: string
           id?: string
           post_id?: string | null
+          reaction_count?: number
           read_at?: string | null
           recipient_id: string
           type: string
@@ -323,6 +364,7 @@ export type Database = {
           created_at?: string
           id?: string
           post_id?: string | null
+          reaction_count?: number
           read_at?: string | null
           recipient_id?: string
           type?: string
@@ -426,6 +468,45 @@ export type Database = {
           },
           {
             foreignKeyName: "post_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_reactions: {
+        Row: {
+          created_at: string
+          post_id: string
+          reaction: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          reaction: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          reaction?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_reactions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -599,6 +680,25 @@ export type Database = {
           other_username: string
           unread_count: number
         }[]
+      }
+      maintain_reaction_notification: {
+        Args: {
+          p_actor: string
+          p_post: string
+          p_recipient: string
+          p_table: string
+          p_target: string
+          p_type: string
+        }
+        Returns: undefined
+      }
+      react_to_comment: {
+        Args: { p_comment: string; p_reaction: string }
+        Returns: Json
+      }
+      react_to_post: {
+        Args: { p_post: string; p_reaction: string }
+        Returns: Json
       }
       set_connection: {
         Args: { p_action: string; p_other: string }

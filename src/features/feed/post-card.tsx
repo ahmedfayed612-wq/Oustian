@@ -2,23 +2,32 @@
 
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Heart, MessageCircle, Trash2, X } from "lucide-react";
+import { MessageCircle, Trash2, X } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Avatar } from "@/components/ui/Avatar";
 import { Card } from "@/components/ui/Card";
 import type { FeedComment } from "@/features/feed/queries";
 import { listPostComments } from "@/features/feed/queries";
+import {
+  EMPTY_REACTIONS,
+  type Reaction,
+  type ReactionTotals,
+} from "@/features/reactions/queries";
+import {
+  ReactionBar,
+  type ReactionTarget,
+} from "@/features/reactions/reaction-bar";
+import { ReactionUsersSheet } from "@/features/reactions/reaction-users-sheet";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { signedStorageUrls } from "@/lib/supabase/storage";
-import { cn } from "@/lib/utils/cn";
 
 export type PostCardProps = {
   post: { id: string; body: string; created_at: string; author_id: string };
   author: { username: string; fullName: string; avatarUrl: string | null };
   me: { id: string; username: string; fullName: string; avatarUrl: string | null };
-  initialLiked: boolean;
-  initialLikeCount: number;
+  /** Aggregated fire/insight/same/talk totals plus the viewer's own reaction. */
+  reactions: ReactionTotals;
   initialCommentCount: number;
   canDelete: boolean;
 };
@@ -76,8 +85,7 @@ export function PostCard({
   post,
   author,
   me,
-  initialLiked,
-  initialLikeCount,
+  reactions: initialReactions,
   initialCommentCount,
   canDelete,
 }: PostCardProps) {
@@ -86,9 +94,11 @@ export function PostCard({
   const format = useFormatter();
 
   const [hidden, setHidden] = useState(false);
-  const [liked, setLiked] = useState(initialLiked);
-  const [likeCount, setLikeCount] = useState(initialLikeCount);
   const [commentCount, setCommentCount] = useState(initialCommentCount);
+  const [sheet, setSheet] = useState<{
+    target: { type: ReactionTarget; id: string };
+    reaction: Reaction;
+  } | null>(null);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<LoadedComment[]>([]);
   const [commentsLoaded, setCommentsLoaded] = useState(false);
@@ -100,29 +110,6 @@ export function PostCard({
   );
   const [replyBody, setReplyBody] = useState("");
 
-  async function toggleLike() {
-    const supabase = createClient();
-    const wasLiked = liked;
-
-    setLiked(!wasLiked);
-    setLikeCount((count) => Math.max(0, count + (wasLiked ? -1 : 1)));
-
-    const { error } = wasLiked
-      ? await supabase
-          .from("post_likes")
-          .delete()
-          .eq("post_id", post.id)
-          .eq("user_id", me.id)
-      : await supabase
-          .from("post_likes")
-          .insert({ post_id: post.id, user_id: me.id });
-
-    if (error) {
-      setLiked(wasLiked);
-      setLikeCount((count) => count + (wasLiked ? 1 : -1));
-    }
-  }
-
   async function toggleComments() {
     const opening = !showComments;
 
@@ -133,7 +120,7 @@ export function PostCard({
     setCommentsLoaded(true);
 
     const supabase = createClient();
-    const rows = await listPostComments(supabase, post.id);
+    const rows = await listPostComments(supabase, post.id, me.id);
     const urls = await signedStorageUrls(
       supabase,
       rows.map((row) => row.author.avatarPath),
@@ -201,6 +188,7 @@ export function PostCard({
               avatarPath: null,
               avatarUrl: me.avatarUrl,
             },
+            reactions: { ...EMPTY_REACTIONS },
           },
         ]);
         setCommentCount((count) => count + 1);
@@ -333,43 +321,25 @@ export function PostCard({
         {post.body}
       </p>
 
-      {likeCount > 0 || commentCount > 0 ? (
+      {commentCount > 0 ? (
         <div className="flex items-center gap-3 px-3.5 pb-2 text-xs text-muted">
-          {likeCount > 0 ? (
-            <span>{t("likesSummary", { count: likeCount })}</span>
-          ) : null}
-          {commentCount > 0 ? (
-            <span className="ms-auto">
-              {t("commentsSummary", { count: commentCount })}
-            </span>
-          ) : null}
+          <span>{t("commentsSummary", { count: commentCount })}</span>
         </div>
       ) : null}
 
-      <div className="flex items-center justify-around gap-1 border-t border-border p-1.5">
-        <button
-          type="button"
-          onClick={toggleLike}
-          aria-pressed={liked}
-          className={cn(
-            "flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-control text-sm font-semibold transition-colors",
-            liked
-              ? "text-brand"
-              : "text-muted hover:bg-surface-2 hover:text-text",
-          )}
-        >
-          <Heart
-            className={cn("size-4", liked && "fill-current")}
-            aria-hidden="true"
-          />
-          {liked ? t("liked") : t("like")}
-        </button>
+      <div className="flex flex-wrap items-center justify-between gap-1 border-t border-border p-1.5">
+        <ReactionBar
+          targetType="post"
+          targetId={post.id}
+          initial={initialReactions}
+          onOpenUsers={(target, reaction) => setSheet({ target, reaction })}
+        />
 
         <button
           type="button"
           onClick={toggleComments}
           aria-expanded={showComments}
-          className="flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-control text-sm font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-text"
+          className="flex min-h-9 items-center justify-center gap-1.5 rounded-control px-2.5 text-sm font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-text"
         >
           <MessageCircle className="size-4" aria-hidden="true" />
           {showComments ? t("hideComments") : t("comment")}
@@ -415,6 +385,18 @@ export function PostCard({
                       </div>
                     </div>
 
+                    <div className="mt-1">
+                      <ReactionBar
+                        targetType="comment"
+                        targetId={entry.comment.id}
+                        initial={entry.reactions}
+                        variant="comment"
+                        onOpenUsers={(target, reaction) =>
+                          setSheet({ target, reaction })
+                        }
+                      />
+                    </div>
+
                     {repliesOf(entry.comment.id).length > 0 ? (
                       <ul className="mt-2 ms-4 flex flex-col gap-2">
                         {repliesOf(entry.comment.id).map((reply) => (
@@ -454,6 +436,16 @@ export function PostCard({
                                 </button>
                               </div>
                             </div>
+
+                            <ReactionBar
+                              targetType="comment"
+                              targetId={reply.comment.id}
+                              initial={reply.reactions}
+                              variant="comment"
+                              onOpenUsers={(target, reaction) =>
+                                setSheet({ target, reaction })
+                              }
+                            />
                           </li>
                         ))}
                       </ul>
@@ -530,6 +522,13 @@ export function PostCard({
           </form>
         </div>
       ) : null}
+
+      <ReactionUsersSheet
+        key={sheet ? `${sheet.target.type}:${sheet.target.id}` : "closed"}
+        target={sheet?.target ?? null}
+        initialReaction={sheet?.reaction ?? "fire"}
+        onClose={() => setSheet(null)}
+      />
     </Card>
   );
 }

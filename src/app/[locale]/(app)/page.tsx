@@ -4,7 +4,7 @@ import { FeedComposer } from "@/components/feed/FeedComposer";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { requireApprovedMember } from "@/features/auth/session";
 import { PostCard } from "@/features/feed/post-card";
-import { listFeedPosts } from "@/features/feed/queries";
+import { listFeedPosts, rankFeedPosts } from "@/features/feed/queries";
 import { createClient } from "@/lib/supabase/server";
 import { signedStorageUrls } from "@/lib/supabase/storage";
 
@@ -19,7 +19,8 @@ export default async function HomePage() {
   const tFeed = await getTranslations("Feed");
 
   const supabase = await createClient();
-  const posts = await listFeedPosts(supabase, viewer.id);
+  // Ranked: weighted reactions plus comments, tempered by recency.
+  const posts = rankFeedPosts(await listFeedPosts(supabase, viewer.id));
 
   const avatarUrls = await signedStorageUrls(supabase, [
     viewer.avatar_path,
@@ -58,8 +59,7 @@ export default async function HomePage() {
                   ? (avatarUrls[viewer.avatar_path] ?? null)
                   : null,
               }}
-              initialLiked={item.likedByMe}
-              initialLikeCount={item.likeCount}
+              reactions={item.reactions}
               initialCommentCount={item.commentCount}
               canDelete={
                 item.post.author_id === viewer.id || viewer.role === "admin"
