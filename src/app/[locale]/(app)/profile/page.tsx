@@ -16,7 +16,7 @@ import { listAuthorPosts } from "@/features/feed/queries";
 import { Link } from "@/i18n/navigation";
 import { facultyOptions } from "@/lib/profile-options";
 import { createClient } from "@/lib/supabase/server";
-import { signedStorageUrls } from "@/lib/supabase/storage";
+import { signedPostMediaUrls, signedStorageUrls } from "@/lib/supabase/storage";
 
 export async function generateMetadata() {
   const t = await getTranslations("Profile");
@@ -42,12 +42,18 @@ export default async function ProfilePage() {
     listIncomingRequests(supabase, profile.id),
   ]);
 
+  // Extract all media keys across every post to sign them in a single batch
+  const allMediaKeys = posts.flatMap((p) => p.media.map((m) => m.storageKey));
+
   // One batched Storage call signs this member's avatar, every post author's
   // avatar (usually the same path repeated) and each pending requester.
-  const avatarUrls = await signedStorageUrls(supabase, [
-    profile.avatar_path,
-    ...posts.map((item) => item.author.avatarPath),
-    ...requests.map((person) => person.avatar_path),
+  const [avatarUrls, mediaUrls] = await Promise.all([
+    signedStorageUrls(supabase, [
+      profile.avatar_path,
+      ...posts.map((item) => item.author.avatarPath),
+      ...requests.map((person) => person.avatar_path),
+    ]),
+    signedPostMediaUrls(supabase, allMediaKeys),
   ]);
   const avatarUrl = profile.avatar_path
     ? (avatarUrls[profile.avatar_path] ?? null)
@@ -202,6 +208,13 @@ export default async function ProfilePage() {
                   fullName: profile.full_name,
                   avatarUrl,
                 }}
+                media={item.media.map((m) => ({
+                  id: m.id,
+                  url: mediaUrls[m.storageKey] ?? "",
+                  altText: m.altText,
+                  width: m.width,
+                  height: m.height,
+                }))}
                 reactions={item.reactions}
                 initialCommentCount={item.commentCount}
                 canDelete={

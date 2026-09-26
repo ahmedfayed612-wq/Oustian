@@ -15,6 +15,16 @@ import {
  * aggregates (four counts + the viewer's own), never as one row per reaction.
  */
 
+export type FeedPostMedia = {
+  id: string;
+  storageKey: string;
+  mimeType: string;
+  width: number;
+  height: number;
+  altText: string | null;
+  displayOrder: number;
+};
+
 export type FeedPost = {
   post: Tables<"posts">;
   author: {
@@ -23,6 +33,7 @@ export type FeedPost = {
     fullName: string;
     avatarPath: string | null;
   };
+  media: FeedPostMedia[];
   reactions: ReactionTotals;
   commentCount: number;
   /** Ranking signal: reaction weights plus discussion weight. */
@@ -56,14 +67,22 @@ async function hydrateFeedPosts(
   const postIds = posts.map((post) => post.id);
   const authorIds = [...new Set(posts.map((post) => post.author_id))];
 
-  const [authorsResult, reactions, commentsResult] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("id, username, full_name, avatar_path")
-      .in("id", authorIds),
-    postReactionTotals(supabase, postIds, viewerId),
-    supabase.from("post_comments").select("post_id").in("post_id", postIds),
-  ]);
+  const [authorsResult, reactions, commentsResult, mediaResult] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, username, full_name, avatar_path")
+        .in("id", authorIds),
+      postReactionTotals(supabase, postIds, viewerId),
+      supabase.from("post_comments").select("post_id").in("post_id", postIds),
+      supabase
+        .from("post_media")
+        .select(
+          "id, post_id, storage_key, mime_type, width, height, alt_text, display_order",
+        )
+        .in("post_id", postIds)
+        .order("display_order", { ascending: true }),
+    ]);
 
   const authorsById = new Map(
     (authorsResult.data ?? []).map((author) => [
@@ -86,9 +105,26 @@ async function hydrateFeedPosts(
     );
   }
 
+  const mediaByPostId = new Map<string, FeedPostMedia[]>();
+
+  for (const item of mediaResult.data ?? []) {
+    const list = mediaByPostId.get(item.post_id) ?? [];
+    list.push({
+      id: item.id,
+      storageKey: item.storage_key,
+      mimeType: item.mime_type,
+      width: item.width,
+      height: item.height,
+      altText: item.alt_text,
+      displayOrder: item.display_order,
+    });
+    mediaByPostId.set(item.post_id, list);
+  }
+
   return posts.map((post) => {
     const totals = reactions.get(post.id) ?? EMPTY_REACTIONS;
     const commentCount = commentCounts.get(post.id) ?? 0;
+    const media = mediaByPostId.get(post.id) ?? [];
 
     return {
       post,
@@ -100,6 +136,7 @@ async function hydrateFeedPosts(
         fullName: "",
         avatarPath: null,
       },
+      media,
       reactions: totals,
       commentCount,
       score: engagementScore(totals, commentCount),

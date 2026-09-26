@@ -6,7 +6,7 @@ import { requireApprovedMember } from "@/features/auth/session";
 import { PostCard } from "@/features/feed/post-card";
 import { listFeedPosts, rankFeedPosts } from "@/features/feed/queries";
 import { createClient } from "@/lib/supabase/server";
-import { signedStorageUrls } from "@/lib/supabase/storage";
+import { signedPostMediaUrls, signedStorageUrls } from "@/lib/supabase/storage";
 
 /**
  * The home feed: real posts, newest first. Counts and author info are resolved
@@ -22,9 +22,15 @@ export default async function HomePage() {
   // Ranked: weighted reactions plus comments, tempered by recency.
   const posts = rankFeedPosts(await listFeedPosts(supabase, viewer.id));
 
-  const avatarUrls = await signedStorageUrls(supabase, [
-    viewer.avatar_path,
-    ...posts.map((item) => item.author.avatarPath),
+  // Extract all media keys across every post to sign them in a single batch
+  const allMediaKeys = posts.flatMap((p) => p.media.map((m) => m.storageKey));
+
+  const [avatarUrls, mediaUrls] = await Promise.all([
+    signedStorageUrls(supabase, [
+      viewer.avatar_path,
+      ...posts.map((item) => item.author.avatarPath),
+    ]),
+    signedPostMediaUrls(supabase, allMediaKeys),
   ]);
 
   return (
@@ -59,6 +65,13 @@ export default async function HomePage() {
                   ? (avatarUrls[viewer.avatar_path] ?? null)
                   : null,
               }}
+              media={item.media.map((m) => ({
+                id: m.id,
+                url: mediaUrls[m.storageKey] ?? "",
+                altText: m.altText,
+                width: m.width,
+                height: m.height,
+              }))}
               reactions={item.reactions}
               initialCommentCount={item.commentCount}
               canDelete={

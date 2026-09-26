@@ -475,6 +475,63 @@ export type Database = {
           },
         ]
       }
+      post_media: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          created_by: string
+          display_order: number
+          file_size: number
+          height: number
+          id: string
+          mime_type: string
+          post_id: string
+          storage_key: string
+          width: number
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          created_by: string
+          display_order?: number
+          file_size: number
+          height: number
+          id?: string
+          mime_type: string
+          post_id: string
+          storage_key: string
+          width: number
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          created_by?: string
+          display_order?: number
+          file_size?: number
+          height?: number
+          id?: string
+          mime_type?: string
+          post_id?: string
+          storage_key?: string
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_media_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_media_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_reactions: {
         Row: {
           created_at: string
@@ -658,6 +715,18 @@ export type Database = {
           p_window: string
         }
         Returns: boolean
+      }
+      create_post: {
+        Args: {
+          p_body: string
+          p_media_alt?: string
+          p_media_height?: number
+          p_media_key?: string
+          p_media_mime?: string
+          p_media_size?: number
+          p_media_width?: number
+        }
+        Returns: string
       }
       is_admin: { Args: { p_user?: string }; Returns: boolean }
       is_approved_member: { Args: { p_user?: string }; Returns: boolean }

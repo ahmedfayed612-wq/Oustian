@@ -17,7 +17,7 @@ import { PostCard } from "@/features/feed/post-card";
 import { listAuthorPosts } from "@/features/feed/queries";
 import { facultyOptions } from "@/lib/profile-options";
 import { createClient } from "@/lib/supabase/server";
-import { signedStorageUrls } from "@/lib/supabase/storage";
+import { signedPostMediaUrls, signedStorageUrls } from "@/lib/supabase/storage";
 
 const usernamePattern = /^[a-z0-9_]{3,24}$/i;
 
@@ -85,12 +85,18 @@ export default async function MemberProfilePage({
     listConnectionCount(supabase, profile.id),
   ]);
 
+  // Extract all media keys across every post to sign them in a single batch
+  const allMediaKeys = posts.flatMap((p) => p.media.map((m) => m.storageKey));
+
   // One batched Storage call signs this member's avatar, the viewer's avatar
   // (the `PostCard` composer) and every post author's avatar together.
-  const avatarUrls = await signedStorageUrls(supabase, [
-    profile.avatar_path,
-    viewer.avatar_path,
-    ...posts.map((item) => item.author.avatarPath),
+  const [avatarUrls, mediaUrls] = await Promise.all([
+    signedStorageUrls(supabase, [
+      profile.avatar_path,
+      viewer.avatar_path,
+      ...posts.map((item) => item.author.avatarPath),
+    ]),
+    signedPostMediaUrls(supabase, allMediaKeys),
   ]);
   const avatarUrl = profile.avatar_path
     ? (avatarUrls[profile.avatar_path] ?? null)
@@ -215,6 +221,13 @@ export default async function MemberProfilePage({
                   fullName: viewer.full_name,
                   avatarUrl: viewerAvatarUrl,
                 }}
+                media={item.media.map((m) => ({
+                  id: m.id,
+                  url: mediaUrls[m.storageKey] ?? "",
+                  altText: m.altText,
+                  width: m.width,
+                  height: m.height,
+                }))}
                 reactions={item.reactions}
                 initialCommentCount={item.commentCount}
                 canDelete={viewer.role === "admin"}

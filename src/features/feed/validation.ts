@@ -1,13 +1,33 @@
 import { z } from "zod";
+import { MAX_ALT_TEXT_LENGTH } from "@/features/media/limits";
 
 /**
  * Feed validation. The database check constraints repeat every rule — neither
  * layer is trusted alone (same contract as the auth schemas).
  */
 
-export const postSchema = z.object({
-  body: z.string().trim().min(1, "post_required").max(5000, "post_too_long"),
-});
+/**
+ * Post creation schema. A post must have either text, a photo, or both.
+ * Empty text with no photo is rejected as "post_required".
+ */
+export const postSchema = z
+  .object({
+    body: z.string().trim().max(5000, "post_too_long").optional().default(""),
+    mediaKey: z.string().trim().min(1).optional(),
+    altText: z
+      .string()
+      .trim()
+      .max(MAX_ALT_TEXT_LENGTH, "alt_too_long")
+      .optional()
+      .default(""),
+  })
+  .refine(
+    (data) => (data.body && data.body.length > 0) || Boolean(data.mediaKey),
+    {
+      message: "post_required",
+      path: ["body"],
+    },
+  );
 
 export const commentSchema = z.object({
   body: z
@@ -32,3 +52,4 @@ export function formDataToObject(formData: FormData) {
 
   return entries;
 }
+

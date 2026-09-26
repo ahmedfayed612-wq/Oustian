@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Card } from "@/components/ui/Card";
 import type { FeedComment } from "@/features/feed/queries";
 import { listPostComments } from "@/features/feed/queries";
+import { ImageViewer } from "@/features/media/image-viewer";
 import {
   EMPTY_REACTIONS,
   type Reaction,
@@ -22,10 +23,19 @@ import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { signedStorageUrls } from "@/lib/supabase/storage";
 
+export type PostCardMedia = {
+  id: string;
+  url: string;
+  altText: string | null;
+  width: number;
+  height: number;
+};
+
 export type PostCardProps = {
   post: { id: string; body: string; created_at: string; author_id: string };
   author: { username: string; fullName: string; avatarUrl: string | null };
   me: { id: string; username: string; fullName: string; avatarUrl: string | null };
+  media?: PostCardMedia[];
   /** Aggregated fire/insight/same/talk totals plus the viewer's own reaction. */
   reactions: ReactionTotals;
   initialCommentCount: number;
@@ -85,6 +95,7 @@ export function PostCard({
   post,
   author,
   me,
+  media = [],
   reactions: initialReactions,
   initialCommentCount,
   canDelete,
@@ -99,6 +110,7 @@ export function PostCard({
     target: { type: ReactionTarget; id: string };
     reaction: Reaction;
   } | null>(null);
+  const [activeMediaIndex, setActiveMediaIndex] = useState<number | null>(null);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<LoadedComment[]>([]);
   const [commentsLoaded, setCommentsLoaded] = useState(false);
@@ -314,12 +326,55 @@ export function PostCard({
         </div>
       </div>
 
-      <p
-        className="px-3.5 pb-3 text-[0.9375rem] leading-relaxed text-text"
-        dir="auto"
-      >
-        {post.body}
-      </p>
+      {post.body ? (
+        <p
+          className="px-3.5 pb-3 text-[0.9375rem] leading-relaxed text-text"
+          dir="auto"
+        >
+          {post.body}
+        </p>
+      ) : null}
+
+      {media.length > 0 ? (
+        <div className="border-t border-border/40 bg-surface-2/30">
+          {media.map((item, index) => {
+            // Layout stability: compute aspect ratio CSS clamp
+            const ratio = item.width && item.height ? `${item.width} / ${item.height}` : "16 / 9";
+            return (
+              <div key={item.id} className="relative w-full overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setActiveMediaIndex(index)}
+                  className="group relative block w-full focus-visible:outline-2 focus-visible:outline-brand"
+                  aria-label={item.altText || t("viewPhoto")}
+                >
+                  <div
+                    className="relative w-full max-h-[520px] min-h-[160px] overflow-hidden bg-surface-2"
+                    style={{ aspectRatio: ratio }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.url}
+                      alt={item.altText || ""}
+                      loading="lazy"
+                      className="size-full object-cover transition duration-300 group-hover:scale-[1.01]"
+                    />
+                  </div>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {activeMediaIndex !== null && media[activeMediaIndex] ? (
+        <ImageViewer
+          src={media[activeMediaIndex].url}
+          alt={media[activeMediaIndex].altText}
+          isOpen={true}
+          onClose={() => setActiveMediaIndex(null)}
+        />
+      ) : null}
 
       {commentCount > 0 ? (
         <div className="flex items-center gap-3 px-3.5 pb-2 text-xs text-muted">

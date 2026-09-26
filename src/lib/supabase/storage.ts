@@ -133,3 +133,74 @@ export async function signedStorageUrls(
 
   return urls;
 }
+
+/**
+ * Signed URL for a private post photo.
+ */
+export async function signedPostMediaUrl(
+  supabase: SupabaseClient<Database>,
+  path: string | null | undefined,
+  expiresInSeconds = 60 * 60,
+): Promise<string | null> {
+  if (!path) return null;
+
+  const cached = cachedSignedUrl(path);
+  if (cached) return cached;
+
+  const { data, error } = await supabase.storage
+    .from("post-media")
+    .createSignedUrl(path, expiresInSeconds);
+
+  if (error) {
+    console.error("[storage] failed to sign post media", path, error.message);
+    return null;
+  }
+
+  const signedUrl = data?.signedUrl ?? null;
+  if (signedUrl) rememberSignedUrl(path, signedUrl, expiresInSeconds);
+
+  return signedUrl;
+}
+
+/**
+ * Batched variant for feed pages and profiles: resolves all media keys
+ * across an entire page of posts in a single Supabase Storage call.
+ */
+export async function signedPostMediaUrls(
+  supabase: SupabaseClient<Database>,
+  paths: readonly (string | null | undefined)[],
+  expiresInSeconds = 60 * 60,
+): Promise<Record<string, string>> {
+  const unique = [...new Set(paths.filter((p): p is string => Boolean(p)))];
+
+  if (unique.length === 0) return {};
+
+  const urls: Record<string, string> = {};
+  const missing: string[] = [];
+
+  for (const path of unique) {
+    const cached = cachedSignedUrl(path);
+    if (cached) urls[path] = cached;
+    else missing.push(path);
+  }
+
+  if (missing.length > 0) {
+    const { data, error } = await supabase.storage
+      .from("post-media")
+      .createSignedUrls(missing, expiresInSeconds);
+
+    if (error || !data) {
+      console.error("[storage] failed to sign post media batch", error?.message);
+      return urls;
+    }
+
+    for (const item of data) {
+      if (item.signedUrl && item.path && !item.error) {
+        urls[item.path] = item.signedUrl;
+        rememberSignedUrl(item.path, item.signedUrl, expiresInSeconds);
+      }
+    }
+  }
+
+  return urls;
+}

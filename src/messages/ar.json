@@ -43,12 +43,22 @@
     "poll": "تصويت",
     "title": "منشور جديد",
     "hint": "هيتشاف مع كل الطلاب المعتمدين في أوست.",
-    "empty": "اكتب حاجة الأول قبل ما تنشر.",
+    "empty": "اكتب حاجة أو أرفق صورة الأول قبل ما تنشر.",
     "publish": "انشر",
     "publishing": "جارٍ النشر…",
     "cancel": "إلغاء",
     "failed": "تعذّر نشر المنشور — حاول مرة أخرى.",
-    "counter": "{count, number} / 5000"
+    "counter": "{count, number} / 5000",
+    "addPhoto": "إضافة صورة",
+    "changePhoto": "تغيير الصورة",
+    "removePhoto": "حذف الصورة",
+    "photoPreview": "معاينة الصورة",
+    "altPlaceholder": "وصف بديل اختياري للصورة",
+    "photoTooLarge": "حجم الصورة لازم يكون أقل من ١٠ ميجابايت.",
+    "photoTooSmall": "أبعاد الصورة لازم تكون على الأقل ٢٠٠×٢٠٠ بكسل.",
+    "photoWrongType": "الصيغ المدعومة فقط هي JPEG و PNG و WebP.",
+    "photoUnreadable": "تعذّر قراءة ملف الصورة. جرب صورة تانية.",
+    "uploadingPhoto": "جارٍ رفع الصورة…"
   },
   "Feed": {
     "title": "البوستات",
@@ -347,7 +357,9 @@
     "replyTo": "رد على {name}",
     "cancelReply": "إلغاء الرد",
     "commentTooLong": "التعليق لحد ١٠٠٠ حرف",
-    "commentFailed": "تعذّر نشر التعليق — حاول مرة أخرى."
+    "commentFailed": "تعذّر نشر التعليق — حاول مرة أخرى.",
+    "viewPhoto": "عرض الصورة بالحجم الكامل",
+    "closePhoto": "إغلاق عارض الصورة"
   },
   "Events": {
     "metaTitle": "الفعاليات",

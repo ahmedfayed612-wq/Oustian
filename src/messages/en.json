@@ -43,12 +43,22 @@
     "poll": "Poll",
     "title": "Create post",
     "hint": "Visible to every approved OUST student.",
-    "empty": "Write something before publishing.",
+    "empty": "Write something or attach a photo before publishing.",
     "publish": "Publish",
     "publishing": "Publishing…",
     "cancel": "Cancel",
     "failed": "Couldn't publish your post — please try again.",
-    "counter": "{count, number} / 5000"
+    "counter": "{count, number} / 5000",
+    "addPhoto": "Add photo",
+    "changePhoto": "Change photo",
+    "removePhoto": "Remove photo",
+    "photoPreview": "Photo preview",
+    "altPlaceholder": "Add alt text description (optional)",
+    "photoTooLarge": "Photo must be smaller than 10MB.",
+    "photoTooSmall": "Photo must be at least 200×200 pixels.",
+    "photoWrongType": "Only JPEG, PNG, and WebP photos are supported.",
+    "photoUnreadable": "Couldn't read this image file. Please try another.",
+    "uploadingPhoto": "Uploading photo…"
   },
   "Feed": {
     "title": "Feed",
@@ -347,7 +357,9 @@
     "replyTo": "Reply to {name}",
     "cancelReply": "Cancel reply",
     "commentTooLong": "Comments can be up to 1000 characters",
-    "commentFailed": "Couldn't post your comment — please try again."
+    "commentFailed": "Couldn't post your comment — please try again.",
+    "viewPhoto": "View full size photo",
+    "closePhoto": "Close photo viewer"
   },
   "Events": {
     "metaTitle": "Events",
