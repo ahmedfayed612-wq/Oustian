@@ -5,6 +5,7 @@ import {
   buildMediaKey,
   isAcceptedImageMime,
   POST_MEDIA_BUCKET,
+  STORY_MEDIA_BUCKET,
   type AcceptedImageMime,
 } from "./limits";
 import { createClient } from "@/lib/supabase/server";
@@ -14,11 +15,21 @@ export type MediaUploadTicket =
   | { ok: false; code: string };
 
 /**
- * Mints a signed upload URL for a post photo directly to Supabase Storage.
- * The browser uploads directly without traversing Next.js server payload bounds (~4.5MB).
+ * Which bucket an upload belongs to. Both are private and share the same
+ * object layout (`<user_id>/<uuid>.<ext>`) and byte policy — they differ only
+ * in who may read the result, which is enforced by storage policies.
+ */
+export type MediaUploadPurpose = "post" | "story";
+
+/**
+ * Mints a signed upload URL for a photo directly to Supabase Storage.
+ * The browser uploads directly without traversing Next.js server payload
+ * bounds (~4.5 MB). The key is built here from the authenticated member's id,
+ * so the client never chooses where its bytes land.
  */
 export async function createMediaUploadTicketAction(
   mime: string,
+  purpose: MediaUploadPurpose = "post",
 ): Promise<MediaUploadTicket> {
   const viewer = await requireApprovedMember();
 
@@ -28,9 +39,10 @@ export async function createMediaUploadTicketAction(
 
   const supabase = await createClient();
   const path = buildMediaKey(viewer.id, mime as AcceptedImageMime);
+  const bucket = purpose === "story" ? STORY_MEDIA_BUCKET : POST_MEDIA_BUCKET;
 
   const { data, error } = await supabase.storage
-    .from(POST_MEDIA_BUCKET)
+    .from(bucket)
     .createSignedUploadUrl(path);
 
   if (error || !data) {
@@ -38,10 +50,6 @@ export async function createMediaUploadTicketAction(
     return { ok: false, code: "photo_unreadable" };
   }
 
-  return {
-    ok: true,
-    path,
-    token: data.token,
-    bucket: POST_MEDIA_BUCKET,
-  };
+  return { ok: true, path, token: data.token, bucket };
 }
+

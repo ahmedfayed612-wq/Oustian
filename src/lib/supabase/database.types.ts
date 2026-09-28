@@ -342,6 +342,7 @@ export type Database = {
         Row: {
           actor_id: string | null
           created_at: string
+          group_id: string | null
           id: string
           post_id: string | null
           reaction_count: number
@@ -352,6 +353,7 @@ export type Database = {
         Insert: {
           actor_id?: string | null
           created_at?: string
+          group_id?: string | null
           id?: string
           post_id?: string | null
           reaction_count?: number
@@ -362,6 +364,7 @@ export type Database = {
         Update: {
           actor_id?: string | null
           created_at?: string
+          group_id?: string | null
           id?: string
           post_id?: string | null
           reaction_count?: number
@@ -375,6 +378,13 @@ export type Database = {
             columns: ["actor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "presentation_groups"
             referencedColumns: ["id"]
           },
           {
@@ -702,11 +712,516 @@ export type Database = {
         }
         Relationships: []
       }
+      stories: {
+        Row: {
+          author_id: string
+          created_at: string
+          deleted_at: string | null
+          expires_at: string
+          id: string
+          status: string
+          visibility: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          deleted_at?: string | null
+          expires_at?: string
+          id?: string
+          status?: string
+          visibility?: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          expires_at?: string
+          id?: string
+          status?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stories_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_media: {
+        Row: {
+          caption: string | null
+          created_at: string
+          created_by: string
+          display_order: number
+          file_size: number
+          height: number
+          id: string
+          mime_type: string
+          storage_key: string
+          story_id: string
+          width: number
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          created_by: string
+          display_order?: number
+          file_size: number
+          height: number
+          id?: string
+          mime_type: string
+          storage_key: string
+          story_id: string
+          width: number
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string
+          display_order?: number
+          file_size?: number
+          height?: number
+          id?: string
+          mime_type?: string
+          storage_key?: string
+          story_id?: string
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_media_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_media_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_views: {
+        Row: {
+          story_id: string
+          viewed_at: string
+          viewer_id: string
+        }
+        Insert: {
+          story_id: string
+          viewed_at?: string
+          viewer_id: string
+        }
+        Update: {
+          story_id?: string
+          viewed_at?: string
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_views_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_views_viewer_id_fkey"
+            columns: ["viewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      universities: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name_ar: string
+          name_en: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_ar: string
+          name_en: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_ar?: string
+          name_en?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      university_subjects: {
+        Row: {
+          code: string
+          created_at: string
+          faculty: string
+          id: string
+          is_active: boolean
+          name_ar: string
+          name_en: string
+          university_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          faculty: string
+          id?: string
+          is_active?: boolean
+          name_ar: string
+          name_en: string
+          university_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          faculty?: string
+          id?: string
+          is_active?: boolean
+          name_ar?: string
+          name_en?: string
+          university_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "university_subjects_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presentation_groups: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string | null
+          status: "active" | "archived"
+          subject_id: string
+          university_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name?: string | null
+          status?: "active" | "archived"
+          subject_id: string
+          university_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string | null
+          status?: "active" | "archived"
+          subject_id?: string
+          university_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presentation_groups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presentation_groups_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "university_subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presentation_groups_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presentation_group_members: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string
+          role: "owner" | "member"
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string
+          role?: "owner" | "member"
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string
+          role?: "owner" | "member"
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presentation_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "presentation_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presentation_group_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presentation_group_invitations: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          invitee_id: string
+          inviter_id: string
+          responded_at: string | null
+          status: "pending" | "accepted" | "declined" | "cancelled"
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          invitee_id: string
+          inviter_id: string
+          responded_at?: string | null
+          status?: "pending" | "accepted" | "declined" | "cancelled"
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          invitee_id?: string
+          inviter_id?: string
+          responded_at?: string | null
+          status?: "pending" | "accepted" | "declined" | "cancelled"
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presentation_group_invitations_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "presentation_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presentation_group_invitations_invitee_id_fkey"
+            columns: ["invitee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presentation_group_invitations_inviter_id_fkey"
+            columns: ["inviter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      university_roles: {
+        Row: {
+          category: "teaching" | "administrative" | "leadership" | "support" | "other"
+          created_at: string
+          description: string | null
+          display_priority: number
+          id: string
+          is_active: boolean
+          name_ar: string
+          name_en: string
+          university_id: string
+        }
+        Insert: {
+          category: "teaching" | "administrative" | "leadership" | "support" | "other"
+          created_at?: string
+          description?: string | null
+          display_priority?: number
+          id?: string
+          is_active?: boolean
+          name_ar: string
+          name_en: string
+          university_id: string
+        }
+        Update: {
+          category?: "teaching" | "administrative" | "leadership" | "support" | "other"
+          created_at?: string
+          description?: string | null
+          display_priority?: number
+          id?: string
+          is_active?: boolean
+          name_ar?: string
+          name_en?: string
+          university_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "university_roles_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_university_roles: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          university_role_id: string
+          updated_at: string
+          user_id: string
+          verification_status: "pending" | "verified" | "rejected" | "revoked" | "expired"
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          university_role_id: string
+          updated_at?: string
+          user_id: string
+          verification_status?: "pending" | "verified" | "rejected" | "revoked" | "expired"
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          university_role_id?: string
+          updated_at?: string
+          user_id?: string
+          verification_status?: "pending" | "verified" | "rejected" | "revoked" | "expired"
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_university_roles_university_role_id_fkey"
+            columns: ["university_role_id"]
+            isOneToOne: false
+            referencedRelation: "university_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_university_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_university_roles_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_role_audit_logs: {
+        Row: {
+          actor_id: string
+          created_at: string
+          id: string
+          new_status: string
+          previous_status: string | null
+          reason: string | null
+          user_id: string
+          user_role_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          id?: string
+          new_status: string
+          previous_status?: string | null
+          reason?: string | null
+          user_id: string
+          user_role_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          id?: string
+          new_status?: string
+          previous_status?: string | null
+          reason?: string | null
+          user_id?: string
+          user_role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_role_audit_logs_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_role_audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_role_audit_logs_user_role_id_fkey"
+            columns: ["user_role_id"]
+            isOneToOne: false
+            referencedRelation: "user_university_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      are_connected: { Args: { p_a: string; p_b: string }; Returns: boolean }
+      can_view_story: { Args: { p_story: string }; Returns: boolean }
+      can_view_story_object: { Args: { p_name: string }; Returns: boolean }
       consume_rate_limit: {
         Args: {
           p_bucket: string
@@ -728,11 +1243,46 @@ export type Database = {
         }
         Returns: string
       }
+      create_story: {
+        Args: {
+          p_caption?: string
+          p_media_height: number
+          p_media_key: string
+          p_media_mime: string
+          p_media_size: number
+          p_media_width: number
+        }
+        Returns: string
+      }
+      create_presentation_group: {
+        Args: {
+          p_description?: string
+          p_initial_invitees?: string[]
+          p_name?: string
+          p_subject_id: string
+        }
+        Returns: string
+      }
+      delete_story: { Args: { p_story: string }; Returns: boolean }
       is_admin: { Args: { p_user?: string }; Returns: boolean }
       is_approved_member: { Args: { p_user?: string }; Returns: boolean }
       is_conversation_member: {
         Args: { p_conversation: string }
         Returns: boolean
+      }
+      invite_to_presentation_group: {
+        Args: {
+          p_group_id: string
+          p_invitee_id: string
+        }
+        Returns: string
+      }
+      leave_presentation_group: {
+        Args: {
+          p_group_id: string
+          p_target_user_id?: string
+        }
+        Returns: string
       }
       is_invite_code_valid: { Args: { p_code: string }; Returns: boolean }
       list_conversation_previews: {
@@ -761,6 +1311,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      owns_story: { Args: { p_story: string }; Returns: boolean }
+      purge_expired_stories: {
+        Args: { p_older_than?: string }
+        Returns: {
+          storage_key: string
+        }[]
+      }
       react_to_comment: {
         Args: { p_comment: string; p_reaction: string }
         Returns: Json
@@ -769,11 +1326,28 @@ export type Database = {
         Args: { p_post: string; p_reaction: string }
         Returns: Json
       }
+      respond_presentation_group_invitation: {
+        Args: {
+          p_accept: boolean
+          p_invitation_id: string
+        }
+        Returns: boolean
+      }
+      set_user_role_verification: {
+        Args: {
+          p_expires_at?: string
+          p_new_status: string
+          p_reason?: string
+          p_user_role_id: string
+        }
+        Returns: boolean
+      }
       set_connection: {
         Args: { p_action: string; p_other: string }
         Returns: string
       }
       start_conversation: { Args: { p_other: string }; Returns: string }
+      view_story: { Args: { p_story: string }; Returns: number }
     }
     Enums: {
       account_role: "student" | "admin"

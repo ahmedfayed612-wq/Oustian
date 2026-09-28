@@ -63,6 +63,59 @@ export async function listConnectionCount(
 }
 
 /**
+ * Accepted connections for a profile — newest first. Powers the clickable
+ * connections-count sheet. RLS already limits rows to approved members, so
+ * both directions are resolved to "the other member" here.
+ */
+export async function listConnectedMembers(
+  supabase: SupabaseClient<Database>,
+  profileId: string,
+  limit = 50,
+): Promise<MemberCard[]> {
+  const { data: links, error } = await supabase
+    .from("connections")
+    .select("requester_id, addressee_id, responded_at, created_at")
+    .eq("status", "accepted")
+    .or(`requester_id.eq.${profileId},addressee_id.eq.${profileId}`)
+    .order("responded_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("[connections] list read failed", error.message);
+    return [];
+  }
+
+  if (!links || links.length === 0) return [];
+
+  const otherIds = [
+    ...new Set(
+      links.map((link) =>
+        link.requester_id === profileId
+          ? link.addressee_id
+          : link.requester_id,
+      ),
+    ),
+  ];
+
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, username, full_name, avatar_path")
+    .in("id", otherIds);
+
+  if (profilesError) {
+    console.error("[connections] list profiles failed", profilesError.message);
+    return [];
+  }
+
+  const byId = new Map((profiles ?? []).map((person) => [person.id, person]));
+
+  // Keep the newest-first order of the links query.
+  return otherIds
+    .map((id) => byId.get(id))
+    .filter((person): person is MemberCard => Boolean(person));
+}
+
+/**
  * Members who asked the viewer for a connection, newest first — the list the
  * own-profile screen answers. RLS limits rows to approved members anyway;
  * the join resolves requesters that are still visible.

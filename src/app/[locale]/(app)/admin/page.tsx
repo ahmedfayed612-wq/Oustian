@@ -7,6 +7,11 @@ import { facultyOptions } from "@/lib/profile-options";
 import { createClient } from "@/lib/supabase/server";
 import { ApprovalQueue, type PendingMember } from "./approval-queue";
 import { InviteCodeManager, type InviteCodeRow } from "./invite-code-manager";
+import { RoleBadgeManager } from "./role-badge-manager";
+import {
+  listAdminRoleAssignments,
+  listUniversityRoles,
+} from "@/features/roles/queries";
 
 export async function generateMetadata() {
   const t = await getTranslations("Admin");
@@ -27,21 +32,38 @@ export default async function AdminPage() {
   const locale = await getLocale();
   const supabase = await createClient();
 
-  const [pendingResult, codesResult] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select(
-        "id, full_name, username, faculty, graduation_year, created_at, verification_method",
-      )
-      .eq("status", "pending")
-      .order("created_at", { ascending: true })
-      .limit(100),
-    supabase
-      .from("invite_codes")
-      .select("id, code, label, uses, max_uses, expires_at, is_active")
-      .order("created_at", { ascending: false })
-      .limit(50),
-  ]);
+  const [pendingResult, codesResult, roleAssignments, universityRoles] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select(
+          "id, full_name, username, faculty, graduation_year, created_at, verification_method",
+        )
+        .eq("status", "pending")
+        .order("created_at", { ascending: true })
+        .limit(100),
+      supabase
+        .from("invite_codes")
+        .select("id, code, label, uses, max_uses, expires_at, is_active")
+        .order("created_at", { ascending: false })
+        .limit(50),
+      listAdminRoleAssignments(supabase),
+      listUniversityRoles(supabase),
+    ]);
+
+  // Approved members selectable in the assign-role form.
+  const { data: approvedRows } = await supabase
+    .from("profiles")
+    .select("id, full_name, username")
+    .eq("status", "approved")
+    .order("full_name")
+    .limit(500);
+
+  const roleMembers = (approvedRows ?? []).map((row) => ({
+    id: row.id,
+    fullName: row.full_name,
+    username: row.username,
+  }));
 
   const facultyLabel = (value: string | null) => {
     const option = facultyOptions.find((item) => item.value === value);
@@ -108,6 +130,21 @@ export default async function AdminPage() {
 
         <div className="mt-3">
           <InviteCodeManager codes={codes} />
+        </div>
+      </Card>
+
+      <Card className="p-4">
+        <h2 className="text-[0.9375rem] font-semibold text-text">
+          {t("rolesTitle")}
+        </h2>
+        <p className="mt-1 text-sm text-muted">{t("rolesBody")}</p>
+
+        <div className="mt-3">
+          <RoleBadgeManager
+            assignments={roleAssignments}
+            roles={universityRoles}
+            members={roleMembers}
+          />
         </div>
       </Card>
     </div>

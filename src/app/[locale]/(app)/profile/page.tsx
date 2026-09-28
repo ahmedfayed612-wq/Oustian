@@ -7,12 +7,15 @@ import { Chip } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { requireApprovedMember } from "@/features/auth/session";
 import { ConnectButton } from "@/features/connections/connect-button";
+import { ConnectionsCount } from "@/features/connections/connections-count";
 import {
   listConnectionCount,
   listIncomingRequests,
 } from "@/features/connections/queries";
 import { PostCard } from "@/features/feed/post-card";
 import { listAuthorPosts } from "@/features/feed/queries";
+import { batchGetUserVerifiedRoles } from "@/features/roles/queries";
+import { RoleBadgeList } from "@/features/roles/role-badge";
 import { Link } from "@/i18n/navigation";
 import { facultyOptions } from "@/lib/profile-options";
 import { createClient } from "@/lib/supabase/server";
@@ -37,10 +40,13 @@ export default async function ProfilePage() {
   const supabase = await createClient();
   const posts = await listAuthorPosts(supabase, profile.id, profile.id);
 
-  const [connectionCount, requests] = await Promise.all([
+  const [connectionCount, requests, verifiedRolesByUser] = await Promise.all([
     listConnectionCount(supabase, profile.id),
     listIncomingRequests(supabase, profile.id),
+    // Your own verified institutional badges for the profile header.
+    batchGetUserVerifiedRoles(supabase, [profile.id]),
   ]);
+  const headerRoles = verifiedRolesByUser.get(profile.id) ?? [];
 
   // Extract all media keys across every post to sign them in a single batch
   const allMediaKeys = posts.flatMap((p) => p.media.map((m) => m.storageKey));
@@ -127,7 +133,7 @@ export default async function ProfilePage() {
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <Chip tone="brand">{t("approvedChip")}</Chip>
-            <Chip>{t("connectionsCount", { count: connectionCount })}</Chip>
+            <ConnectionsCount profileId={profile.id} count={connectionCount} />
             {profile.role === "admin" ? (
               <Chip tone="accent">{t("adminChip")}</Chip>
             ) : null}
@@ -136,6 +142,15 @@ export default async function ProfilePage() {
               {profile.language === "ar" ? t("language.ar") : t("language.en")}
             </Chip>
           </div>
+
+          {headerRoles.length > 0 ? (
+            <RoleBadgeList
+              roles={headerRoles}
+              size="md"
+              limit={4}
+              className="mt-3"
+            />
+          ) : null}
         </div>
       </Card>
 
@@ -201,6 +216,7 @@ export default async function ProfilePage() {
                   avatarUrl: item.author.avatarPath
                     ? (avatarUrls[item.author.avatarPath] ?? null)
                     : null,
+                  roles: item.author.roles,
                 }}
                 me={{
                   id: profile.id,

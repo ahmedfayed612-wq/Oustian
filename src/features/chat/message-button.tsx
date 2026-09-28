@@ -14,9 +14,15 @@ import { startConversationAction } from "./actions";
 export function MessageButton({
   otherId,
   className,
+  compact = false,
+  label,
 }: {
   otherId: string;
   className?: string;
+  /** Compact icon-only presentation for dense rows (connections sheet). */
+  compact?: boolean;
+  /** Overrides the visible label (defaults to the Chat.messageButton copy). */
+  label?: string;
 }) {
   const t = useTranslations("Chat");
   const tAuth = useTranslations("Auth.errors");
@@ -58,6 +64,32 @@ export function MessageButton({
     }
   }
 
+  if (compact) {
+    return (
+      <span className="inline-flex shrink-0 flex-col items-end gap-1.5">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={handleClick}
+          isLoading={pending}
+          loadingLabel={t("opening")}
+          aria-label={label ?? t("messageButton")}
+          title={label ?? t("messageButton")}
+          className={className}
+        >
+          <MessageCircle className="size-4" aria-hidden="true" />
+          {label ? <span aria-hidden="true">{label}</span> : null}
+        </Button>
+
+        {errorKey ? (
+          <span role="alert" className="text-xs text-danger">
+            {errorText(errorKey)}
+          </span>
+        ) : null}
+      </span>
+    );
+  }
+
   return (
     <span className="inline-flex flex-col gap-1.5">
       <Button
@@ -69,7 +101,7 @@ export function MessageButton({
         className={className}
       >
         <MessageCircle className="size-4" aria-hidden="true" />
-        {t("messageButton")}
+        {label ?? t("messageButton")}
       </Button>
 
       {errorKey ? (

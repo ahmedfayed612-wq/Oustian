@@ -92,11 +92,12 @@ export async function connectionAction(
     return { status: "error", code: "failed" };
   }
 
-  // The count chip, the suggestions rail and the requests list all read from
-  // the two screens members actually visit after tapping the button.
+  // The count chip, the suggestions rail, the requests list and the inbox all
+  // read from the screens members actually visit after tapping the button.
   const locale = await getLocale();
   revalidatePath(`/${locale}`);
   revalidatePath(`/${locale}/profile`);
+  revalidatePath(`/${locale}/chat`);
 
   return { status: "success", state: data as ConnectionState };
 }

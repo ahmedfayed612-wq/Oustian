@@ -30,7 +30,13 @@ export const rateLimitRules = {
   connection: { bucket: "connections:action", window: "10 minutes", max: 30 },
   reaction: { bucket: "reactions:react", window: "10 minutes", max: 120 },
   postCreate: { bucket: "feed:post", window: "10 minutes", max: 10 },
+  storyCreate: { bucket: "stories:create", window: "10 minutes", max: 10 },
+  storyView: { bucket: "stories:view", window: "10 minutes", max: 300 },
   eventCreate: { bucket: "events:create", window: "10 minutes", max: 10 },
+  groupCreate: { bucket: "groups:create", window: "10 minutes", max: 10 },
+  groupInvite: { bucket: "groups:invite", window: "10 minutes", max: 30 },
+  groupAction: { bucket: "groups:action", window: "10 minutes", max: 40 },
+  roleAdmin: { bucket: "roles:admin", window: "10 minutes", max: 50 },
 } as const satisfies Record<string, RateLimitRule>;
 
 /**

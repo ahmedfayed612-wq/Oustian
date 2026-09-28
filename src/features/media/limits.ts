@@ -8,9 +8,23 @@
 /** Private bucket for post photos (same signed-URL delivery as avatars). */
 export const POST_MEDIA_BUCKET = "post-media";
 
+/**
+ * Private bucket for story photos. Separate from `post-media` because story
+ * visibility is per-connection, not "every approved member" — its reads are
+ * gated by story visibility at the storage layer (see the stories migration).
+ */
+export const STORY_MEDIA_BUCKET = "story-media";
+
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
 export const MIN_IMAGE_DIMENSION = 200; // px, each side
 export const MAX_ALT_TEXT_LENGTH = 425;
+
+/** Caption overlaid on a story photo (mirrored by the story_media check). */
+export const MAX_STORY_CAPTION_LENGTH = 280;
+
+/** Story lifetime. The database default repeats this as `now() + 24 hours`. */
+export const STORY_TTL_HOURS = 24;
+
 
 /** V1 publishes one photo per post; the schema already allows more later. */
 export const MAX_PHOTOS_PER_POST = 1;

@@ -7,6 +7,10 @@ import {
   postReactionTotals,
   type ReactionTotals,
 } from "@/features/reactions/queries";
+import {
+  batchGetUserVerifiedRoles,
+  type UserVerifiedRole,
+} from "@/features/roles/queries";
 
 /**
  * Feed reads. Batched on purpose (posts → authors → reactions → comment
@@ -25,14 +29,18 @@ export type FeedPostMedia = {
   displayOrder: number;
 };
 
+export type FeedAuthor = {
+  id: string;
+  username: string;
+  fullName: string;
+  avatarPath: string | null;
+  /** Verified university role badges, highest display priority first. */
+  roles: UserVerifiedRole[];
+};
+
 export type FeedPost = {
   post: Tables<"posts">;
-  author: {
-    id: string;
-    username: string;
-    fullName: string;
-    avatarPath: string | null;
-  };
+  author: FeedAuthor;
   media: FeedPostMedia[];
   reactions: ReactionTotals;
   commentCount: number;
@@ -42,12 +50,7 @@ export type FeedPost = {
 
 export type FeedComment = {
   comment: Tables<"post_comments">;
-  author: {
-    id: string;
-    username: string;
-    fullName: string;
-    avatarPath: string | null;
-  };
+  author: FeedAuthor;
   reactions: ReactionTotals;
 };
 
@@ -67,7 +70,7 @@ async function hydrateFeedPosts(
   const postIds = posts.map((post) => post.id);
   const authorIds = [...new Set(posts.map((post) => post.author_id))];
 
-  const [authorsResult, reactions, commentsResult, mediaResult] =
+  const [authorsResult, reactions, commentsResult, mediaResult, rolesByUserId] =
     await Promise.all([
       supabase
         .from("profiles")
@@ -82,6 +85,9 @@ async function hydrateFeedPosts(
         )
         .in("post_id", postIds)
         .order("display_order", { ascending: true }),
+      // Verified institutional badges for every author on this page — one
+      // batched read, RLS-scoped to visible, unexpired, verified rows.
+      batchGetUserVerifiedRoles(supabase, authorIds),
     ]);
 
   const authorsById = new Map(
@@ -92,6 +98,7 @@ async function hydrateFeedPosts(
         username: author.username,
         fullName: author.full_name,
         avatarPath: author.avatar_path,
+        roles: rolesByUserId.get(author.id) ?? [],
       },
     ]),
   );
@@ -135,6 +142,7 @@ async function hydrateFeedPosts(
         username: "",
         fullName: "",
         avatarPath: null,
+        roles: [],
       },
       media,
       reactions: totals,
@@ -239,12 +247,13 @@ export async function listPostComments(
   const authorIds = [...new Set(comments.map((comment) => comment.author_id))];
   const commentIds = comments.map((comment) => comment.id);
 
-  const [authorsResult, reactions] = await Promise.all([
+  const [authorsResult, reactions, rolesByUserId] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, username, full_name, avatar_path")
       .in("id", authorIds),
     commentReactionTotals(supabase, commentIds, viewerId),
+    batchGetUserVerifiedRoles(supabase, authorIds),
   ]);
 
   const authorsById = new Map(
@@ -255,6 +264,7 @@ export async function listPostComments(
         username: author.username,
         fullName: author.full_name,
         avatarPath: author.avatar_path,
+        roles: rolesByUserId.get(author.id) ?? [],
       },
     ]),
   );
@@ -266,6 +276,7 @@ export async function listPostComments(
       username: "",
       fullName: "",
       avatarPath: null,
+      roles: [],
     },
     reactions: reactions.get(comment.id) ?? EMPTY_REACTIONS,
   }));

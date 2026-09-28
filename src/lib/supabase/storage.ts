@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
+import { STORY_MEDIA_BUCKET } from "@/features/media/limits";
 
 export const AVATAR_BUCKET = "avatars";
 
@@ -128,6 +129,47 @@ export async function signedStorageUrls(
         urls[item.path] = item.signedUrl;
         rememberSignedUrl(item.path, item.signedUrl, expiresInSeconds);
       }
+    }
+  }
+
+  return urls;
+}
+
+/**
+ * Signed URLs for story photos.
+ *
+ * Deliberately NOT cached, unlike `signedStorageUrls` / `signedPostMediaUrls`:
+ * a story photo is readable only by the author and their connections, so a
+ * process-wide cache keyed by path would hand one member's URL to another.
+ * Signing happens once per story per render, which is cheap and correct.
+ *
+ * The Storage policy behind `createSignedUrl` is `can_view_story_object`, so
+ * a member outside the audience (or looking at an expired story) gets an
+ * error here rather than a working URL.
+ */
+export async function signedStoryMediaUrls(
+  supabase: SupabaseClient<Database>,
+  paths: readonly (string | null | undefined)[],
+  expiresInSeconds = 60 * 60,
+): Promise<Record<string, string>> {
+  const unique = [...new Set(paths.filter((p): p is string => Boolean(p)))];
+
+  if (unique.length === 0) return {};
+
+  const { data, error } = await supabase.storage
+    .from(STORY_MEDIA_BUCKET)
+    .createSignedUrls(unique, expiresInSeconds);
+
+  if (error || !data) {
+    console.error("[storage] failed to sign story media", error?.message);
+    return {};
+  }
+
+  const urls: Record<string, string> = {};
+
+  for (const item of data) {
+    if (item.signedUrl && item.path && !item.error) {
+      urls[item.path] = item.signedUrl;
     }
   }
 

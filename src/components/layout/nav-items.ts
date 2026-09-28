@@ -6,6 +6,7 @@ import {
   Settings,
   SquarePen,
   UserRound,
+  UsersRound,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -17,6 +18,7 @@ export type NavItemKey =
   | "profile"
   | "create"
   | "settings"
+  | "groups"
   | "admin";
 
 export type NavItem = {
@@ -41,6 +43,7 @@ export const navItems: readonly NavItem[] = [
 /** Secondary destinations, listed under "Shortcuts" in the left rail. */
 export const shortcutNavItems: readonly NavItem[] = [
   { href: "/create", labelKey: "create", Icon: SquarePen },
+  { href: "/groups", labelKey: "groups", Icon: UsersRound },
   { href: "/settings", labelKey: "settings", Icon: Settings },
 ];
 

@@ -138,17 +138,30 @@ export default async function NotificationsPage() {
                     return t("reactedToComment", { name: actorName });
                   case "comment_talk":
                     return t("talkedAboutComment", { name: actorName });
+                  case "group_invite":
+                    return t("groupInvite", { name: actorName });
+                  case "group_invite_accepted":
+                    return t("groupInviteAccepted", { name: actorName });
+                  case "group_invite_declined":
+                    return t("groupInviteDeclined", { name: actorName });
+                  case "group_member_removed":
+                    return t("groupMemberRemoved", { name: actorName });
+                  case "group_ownership_transferred":
+                    return t("groupOwnershipTransferred", { name: actorName });
                   default:
                     return t("liked", { name: actorName });
                 }
               })();
 
               // Connection requests land on the requester's profile;
+              // group events lead to the presentation-groups screen;
               // everything else still leads back to the feed.
               const href =
                 row.type === "connection_request" && actor?.username
                   ? `/profile/${actor.username}`
-                  : "/";
+                  : row.type.startsWith("group_")
+                    ? "/groups"
+                    : "/";
 
               return (
                 <li key={row.id}>

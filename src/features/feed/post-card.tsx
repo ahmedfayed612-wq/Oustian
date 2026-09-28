@@ -9,6 +9,8 @@ import { Card } from "@/components/ui/Card";
 import type { FeedComment } from "@/features/feed/queries";
 import { listPostComments } from "@/features/feed/queries";
 import { ImageViewer } from "@/features/media/image-viewer";
+import { RoleBadgeList } from "@/features/roles/role-badge";
+import type { UserVerifiedRole } from "@/features/roles/queries";
 import {
   EMPTY_REACTIONS,
   type Reaction,
@@ -33,7 +35,13 @@ export type PostCardMedia = {
 
 export type PostCardProps = {
   post: { id: string; body: string; created_at: string; author_id: string };
-  author: { username: string; fullName: string; avatarUrl: string | null };
+  author: {
+    username: string;
+    fullName: string;
+    avatarUrl: string | null;
+    /** Verified institutional role badges (institutional, not system role). */
+    roles?: UserVerifiedRole[];
+  };
   me: { id: string; username: string; fullName: string; avatarUrl: string | null };
   media?: PostCardMedia[];
   /** Aggregated fire/insight/same/talk totals plus the viewer's own reaction. */
@@ -77,12 +85,17 @@ function CommentAuthorName({ author }: { author: LoadedComment["author"] }) {
   }
 
   return (
-    <Link
-      href={`/profile/${author.username}`}
-      className="text-xs font-semibold text-text transition-colors hover:text-brand"
-    >
-      {author.fullName}
-    </Link>
+    <span className="flex flex-wrap items-center gap-1.5">
+      <Link
+        href={`/profile/${author.username}`}
+        className="text-xs font-semibold text-text transition-colors hover:text-brand"
+      >
+        {author.fullName}
+      </Link>
+      {author.roles.length > 0 ? (
+        <RoleBadgeList roles={author.roles} limit={1} />
+      ) : null}
+    </span>
   );
 }
 
@@ -199,6 +212,8 @@ export function PostCard({
               fullName: me.fullName,
               avatarPath: null,
               avatarUrl: me.avatarUrl,
+              // Optimistic row: roles re-hydrate on the next full comment load.
+              roles: [],
             },
             reactions: { ...EMPTY_REACTIONS },
           },
@@ -305,6 +320,9 @@ export function PostCard({
               >
                 {author.fullName}
               </Link>
+              {author.roles && author.roles.length > 0 ? (
+                <RoleBadgeList roles={author.roles} className="mt-1" />
+              ) : null}
               <p className="mt-0.5 truncate text-xs text-muted">
                 <span dir="ltr">@{author.username}</span>
                 {" · "}

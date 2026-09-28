@@ -5,6 +5,8 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { requireApprovedMember } from "@/features/auth/session";
+import { batchGetUserVerifiedRoles } from "@/features/roles/queries";
+import { RoleBadgeList } from "@/features/roles/role-badge";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signedStorageUrls } from "@/lib/supabase/storage";
@@ -75,6 +77,15 @@ export default async function SearchPage({
     (results ?? []).map((person) => person.avatar_path),
   );
 
+  // One batched read powers every badge row in the result list.
+  const rolesByUserId =
+    results && results.length > 0
+      ? await batchGetUserVerifiedRoles(
+          supabase,
+          results.map((person) => person.id),
+        )
+      : new Map();
+
   return (
     <div className="flex flex-col gap-3">
       <PageHeader title={t("label")} description={t("description")} />
@@ -143,6 +154,13 @@ export default async function SearchPage({
                     >
                       @{person.username}
                     </span>
+                    {rolesByUserId.get(person.id)?.length ? (
+                      <RoleBadgeList
+                        roles={rolesByUserId.get(person.id)}
+                        limit={2}
+                        className="mt-1"
+                      />
+                    ) : null}
                   </span>
                 </Link>
               </li>

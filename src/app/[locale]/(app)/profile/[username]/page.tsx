@@ -8,6 +8,7 @@ import { Chip } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { requireApprovedMember } from "@/features/auth/session";
 import { ConnectButton } from "@/features/connections/connect-button";
+import { ConnectionsCount } from "@/features/connections/connections-count";
 import {
   getConnectionState,
   listConnectionCount,
@@ -15,6 +16,8 @@ import {
 import { MessageButton } from "@/features/chat/message-button";
 import { PostCard } from "@/features/feed/post-card";
 import { listAuthorPosts } from "@/features/feed/queries";
+import { batchGetUserVerifiedRoles } from "@/features/roles/queries";
+import { RoleBadgeList } from "@/features/roles/role-badge";
 import { facultyOptions } from "@/lib/profile-options";
 import { createClient } from "@/lib/supabase/server";
 import { signedPostMediaUrls, signedStorageUrls } from "@/lib/supabase/storage";
@@ -79,11 +82,15 @@ export default async function MemberProfilePage({
 
   const supabase = await createClient();
 
-  const [posts, connectionState, connectionCount] = await Promise.all([
-    listAuthorPosts(supabase, profile.id, viewer.id),
-    getConnectionState(supabase, viewer.id, profile.id),
-    listConnectionCount(supabase, profile.id),
-  ]);
+  const [posts, connectionState, connectionCount, verifiedRolesByUser] =
+    await Promise.all([
+      listAuthorPosts(supabase, profile.id, viewer.id),
+      getConnectionState(supabase, viewer.id, profile.id),
+      listConnectionCount(supabase, profile.id),
+      // This member's verified institutional badges for the profile header.
+      batchGetUserVerifiedRoles(supabase, [profile.id]),
+    ]);
+  const headerRoles = verifiedRolesByUser.get(profile.id) ?? [];
 
   // Extract all media keys across every post to sign them in a single batch
   const allMediaKeys = posts.flatMap((p) => p.media.map((m) => m.storageKey));
@@ -182,12 +189,21 @@ export default async function MemberProfilePage({
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <Chip tone="brand">{t("approvedChip")}</Chip>
-            <Chip>{t("connectionsCount", { count: connectionCount })}</Chip>
+            <ConnectionsCount profileId={profile.id} count={connectionCount} />
             {profile.role === "admin" ? (
               <Chip tone="accent">{t("adminChip")}</Chip>
             ) : null}
             {profile.is_private ? <Chip>{t("privateBadge")}</Chip> : null}
           </div>
+
+          {headerRoles.length > 0 ? (
+            <RoleBadgeList
+              roles={headerRoles}
+              size="md"
+              limit={4}
+              className="mt-3"
+            />
+          ) : null}
         </div>
       </Card>
 
@@ -214,6 +230,7 @@ export default async function MemberProfilePage({
                   avatarUrl: item.author.avatarPath
                     ? (avatarUrls[item.author.avatarPath] ?? null)
                     : null,
+                  roles: item.author.roles,
                 }}
                 me={{
                   id: viewer.id,
