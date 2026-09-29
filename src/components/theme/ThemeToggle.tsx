@@ -19,9 +19,13 @@ function isThemeName(value: string | undefined): value is ThemeName {
   return themeOrder.includes(value as ThemeName);
 }
 
-/** Cycles system -> light -> dark. The stored theme is browser-only, so the
- *  icon and label wait for hydration to avoid a mismatch. */
-export function ThemeToggle() {
+/**
+ * Cycles system -> light -> dark. The stored theme is browser-only, so the
+ * icon and label wait for hydration to avoid a mismatch. `className` exists so
+ * the top bar can hide the control at widths where another target matters more
+ * (the cycle is also in Settings).
+ */
+export function ThemeToggle({ className }: { className?: string }) {
   const t = useTranslations("Theme");
   const { theme, setTheme } = useTheme();
   const hydrated = useHydrated();
@@ -35,6 +39,7 @@ export function ThemeToggle() {
     <IconButton
       label={t("switchTo", { theme: t(next) })}
       onClick={() => setTheme(next)}
+      className={className}
     >
       <Icon className="size-5" />
     </IconButton>

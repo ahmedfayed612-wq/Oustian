@@ -20,12 +20,12 @@
     "events": "Events",
     "create": "Create",
     "chat": "Messages",
-    "notifications": "Notifications",
     "profile": "Profile",
     "settings": "Settings",
     "shortcuts": "Shortcuts",
-    "groups": "Groups",
-    "admin": "Admin"
+    "groups": "Presentation groups",
+    "admin": "Admin",
+    "groupsShort": "Groups"
   },
   "Search": {
     "label": "Search",
@@ -72,7 +72,8 @@
     "suggestionsEmpty": "You're all caught up — every new face here is already connected.",
     "campusBody": "The private app for Obour University for Science and Technology students — invite codes and manual approval only.",
     "aboutTitle": "Why invite-only?",
-    "aboutBody": "Every account is reviewed by hand, so your feed stays full of real OUST students."
+    "aboutBody": "Every account is reviewed by hand, so your feed stays full of real OUST students.",
+    "dismissSuggestion": "Dismiss the suggestion for {name}"
   },
   "Reactions": {
     "fire": "Fire",
@@ -120,7 +121,8 @@
     "editProfile": "Set up profile"
   },
   "TopBar": {
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "notificationsWithCount": "Notifications, {count} unread"
   },
   "Auth": {
     "campusNote": "Oustians is for OUST students only. Every account is approved by hand.",
@@ -317,7 +319,6 @@
     "switchTo": "Switch to {theme}"
   },
   "Locale": {
-    "other": "العربية",
     "switchTo": "Switch to Arabic"
   },
   "Home": {
@@ -327,7 +328,7 @@
   "Stories": {
     "title": "New story",
     "trayTitle": "Stories",
-    "hint": "A photo that disappears after 24 hours.",
+    "hint": "A photo or video that disappears after 24 hours.",
     "add": "Add",
     "addStory": "Add your story",
     "yourStory": "Your story",
@@ -348,10 +349,7 @@
     "deleteStory": "Delete this story",
     "deleteConfirm": "Delete this story? It will disappear for everyone.",
     "composer": {
-      "pickPhoto": "Choose a photo",
-      "pickHint": "JPG, PNG or WebP up to 10 MB — portrait, landscape or square.",
-      "replacePhoto": "Replace photo",
-      "removePhoto": "Remove photo",
+      "pickHint": "JPG, PNG or WebP photos up to 10 MB · MP4, MOV or WebM videos up to 50 MB",
       "uploading": "Uploading…",
       "captionLabel": "Caption",
       "captionPlaceholder": "Add a caption (optional)",
@@ -360,13 +358,18 @@
       "publish": "Share story",
       "publishing": "Sharing…",
       "cancel": "Cancel",
-      "photoRequired": "Choose a photo before sharing.",
-      "photoInvalid": "That file isn't a supported image, or it's larger than 10 MB.",
-      "photoTooLarge": "That image is larger than 10 MB.",
-      "photoTooSmall": "That image is too small — at least 200 × 200 pixels.",
-      "photoWrongType": "Stories accept JPG, PNG or WebP photos.",
-      "photoUnreadable": "We couldn't read that photo. Please try another one.",
-      "failed": "Couldn't share your story — please try again."
+      "photoTooLarge": "That photo is larger than 10 MB.",
+      "failed": "Couldn't share your story — please try again.",
+      "mediaRequired": "Choose a photo or video before sharing.",
+      "unsupportedType": "That file type isn't supported. Use JPG, PNG, WebP, MP4, MOV or WebM.",
+      "videoTooLarge": "That video is larger than 50 MB.",
+      "tooSmall": "Media must be at least 200 × 200 pixels.",
+      "unreadable": "We couldn't read that file. Please try another one.",
+      "pickMedia": "Choose a photo or video",
+      "replaceMedia": "Replace",
+      "removeMedia": "Remove",
+      "preparing": "Preparing…",
+      "uploadFailed": "We couldn't upload your story. Please try again."
     }
   },
   "Chat": {

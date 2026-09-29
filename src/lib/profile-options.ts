@@ -32,3 +32,24 @@ export function graduationYearOptions(now = new Date()) {
 }
 
 export const graduationYearRange = { min: 2000, max: 2100 } as const;
+
+/**
+ * "Engineering · 2027" — the one-line identity every member-facing surface
+ * shows (the chrome's profile card, a suggestion card). Built in one place so
+ * the wording cannot drift between them, and null when the member has filled
+ * in neither picker.
+ */
+export function headlineForMember(
+  faculty: string | null | undefined,
+  graduationYear: number | null | undefined,
+  locale: string,
+): string | null {
+  const option = facultyOptions.find((item) => item.value === faculty);
+
+  const parts = [
+    option ? (locale === "ar" ? option.nameAr : option.nameEn) : null,
+    graduationYear ? String(graduationYear) : null,
+  ].filter((part): part is string => Boolean(part));
+
+  return parts.length > 0 ? parts.join(" · ") : null;
+}

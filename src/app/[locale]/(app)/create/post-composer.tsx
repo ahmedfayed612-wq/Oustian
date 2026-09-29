@@ -252,6 +252,10 @@ export function PostComposer({
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) handleFileSelect(file);
+                // Clear the input so re-picking the *same* file (after a
+                // failure, or to retry) fires `change` again instead of
+                // silently doing nothing.
+                e.target.value = "";
               }}
             />
             <button

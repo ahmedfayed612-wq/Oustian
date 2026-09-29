@@ -86,6 +86,15 @@ export function orderStoryItems(items: StoryItem[]): StoryItem[] {
   );
 }
 
+/**
+ * Is this story's media a clip? `story_media.mime_type` is the authoritative
+ * record (the server sniffed the bytes), so the viewer never has to guess from
+ * a file name — the same rule sizes the frame and picks `<video>` vs `<img>`.
+ */
+export function isVideoMime(mimeType: string): boolean {
+  return mimeType.startsWith("video/");
+}
+
 export function unseenCount(items: StoryItem[]): number {
   return items.filter((item) => !item.viewedByMe).length;
 }

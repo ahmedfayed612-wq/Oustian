@@ -20,12 +20,12 @@
     "events": "الفعاليات",
     "create": "إنشاء",
     "chat": "الرسايل",
-    "notifications": "الإشعارات",
     "profile": "حسابي",
     "settings": "الإعدادات",
     "shortcuts": "اختصارات",
-    "groups": "المجموعات",
-    "admin": "الإدارة"
+    "groups": "مجموعات العرض",
+    "admin": "الإدارة",
+    "groupsShort": "مجموعات"
   },
   "Search": {
     "label": "البحث",
@@ -72,7 +72,8 @@
     "suggestionsEmpty": "تمام كده — كل الوجوه الجديدة هنا متصل بيها.",
     "campusBody": "التطبيق الخاص لطلبة جامعة العبور للعلوم والتكنولوجيا — بكود دعوة وموافقة يدوية بس.",
     "aboutTitle": "ليه بالدعوة بس؟",
-    "aboutBody": "كل حساب بيتم مراجعته يدويًا، فاللي بتشوفه دايمًا طلبة حقيقيين من الجامعة."
+    "aboutBody": "كل حساب بيتم مراجعته يدويًا، فاللي بتشوفه دايمًا طلبة حقيقيين من الجامعة.",
+    "dismissSuggestion": "إخفاء اقتراح {name}"
   },
   "Reactions": {
     "fire": "تحفيز",
@@ -120,7 +121,8 @@
     "editProfile": "جهّز حسابك"
   },
   "TopBar": {
-    "notifications": "الإشعارات"
+    "notifications": "الإشعارات",
+    "notificationsWithCount": "الإشعارات، {count} غير مقروء"
   },
   "Auth": {
     "campusNote": "Oustians لطلبة جامعة العبور بس، وكل حساب بيتم اعتماده يدويًا.",
@@ -317,7 +319,6 @@
     "switchTo": "غيّر المظهر إلى {theme}"
   },
   "Locale": {
-    "other": "English",
     "switchTo": "التبديل إلى الإنجليزية"
   },
   "Home": {
@@ -327,7 +328,7 @@
   "Stories": {
     "title": "ستوري جديد",
     "trayTitle": "الستوريز",
-    "hint": "صورة بتختفي بعد ٢٤ ساعة.",
+    "hint": "صورة أو فيديو بتختفي بعد ٢٤ ساعة.",
     "add": "أضف",
     "addStory": "أضف ستوريك",
     "yourStory": "ستوريك",
@@ -348,11 +349,8 @@
     "deleteStory": "احذف الستوري ده",
     "deleteConfirm": "نحذف الستوري ده؟ هيختفي للكل.",
     "composer": {
-      "pickPhoto": "اختار صورة",
-      "pickHint": "JPG أو PNG أو WebP لحد ١٠ ميجا — طولي أو عرضي أو مربع.",
-      "replacePhoto": "غيّر الصورة",
-      "removePhoto": "احذف الصورة",
-      "uploading": "جاري الرفع…",
+      "pickHint": "صور JPG أو PNG أو WebP لحد ١٠ ميجا · فيديوهات MP4 أو MOV أو WebM لحد ٥٠ ميجا",
+      "uploading": "جارٍ الرفع…",
       "captionLabel": "نص",
       "captionPlaceholder": "أضف نص (اختياري)",
       "visibilityNote": "ستوريك بيظهر لاتصالاتك.",
@@ -360,13 +358,18 @@
       "publish": "شارك الستوري",
       "publishing": "جاري النشر…",
       "cancel": "إلغاء",
-      "photoRequired": "اختار صورة قبل ما تنشر.",
-      "photoInvalid": "الملف ده مش صورة مدعومة، أو أكبر من ١٠ ميجا.",
       "photoTooLarge": "الصورة أكبر من ١٠ ميجا.",
-      "photoTooSmall": "الصورة صغيرة أوي — لازم ٢٠٠ × ٢٠٠ بكسل على الأقل.",
-      "photoWrongType": "الستوريز بتقبل JPG أو PNG أو WebP بس.",
-      "photoUnreadable": "مقدرناش نقرا الصورة دي. جرّب صورة تانية.",
-      "failed": "مجاش ننشر ستوريك — جرّب تاني."
+      "failed": "مجاش ننشر ستوريك — جرّب تاني.",
+      "mediaRequired": "اختار صورة أو فيديو قبل النشر.",
+      "unsupportedType": "الصيغة دي غير مدعومة. استخدم JPG أو PNG أو WebP أو MP4 أو MOV أو WebM.",
+      "videoTooLarge": "الفيديو أكبر من ٥٠ ميجا.",
+      "tooSmall": "لازم أبعاد الوسائط تكون ٢٠٠ × ٢٠٠ بكسل على الأقل.",
+      "unreadable": "مقدرناش نقرا الملف ده. جرّب ملف تاني.",
+      "pickMedia": "اختار صورة أو فيديو",
+      "replaceMedia": "تغيير",
+      "removeMedia": "إزالة",
+      "preparing": "جارٍ التجهيز…",
+      "uploadFailed": "مقدرناش نرفع الستوري. جرّب تاني."
     }
   },
   "Chat": {

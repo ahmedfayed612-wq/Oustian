@@ -2,7 +2,8 @@ import { getLocale } from "next-intl/server";
 import { AppShell } from "@/components/layout/AppShell";
 import type { ChromeMember } from "@/components/layout/member";
 import { requireApprovedMember } from "@/features/auth/session";
-import { facultyOptions } from "@/lib/profile-options";
+import { getUnreadNotificationCount } from "@/features/notifications/queries";
+import { headlineForMember } from "@/lib/profile-options";
 import { createClient } from "@/lib/supabase/server";
 import { signedStorageUrl } from "@/lib/supabase/storage";
 
@@ -14,6 +15,10 @@ import { signedStorageUrl } from "@/lib/supabase/storage";
  * exists. The check is resolved once per request (React `cache` inside the
  * helper), and the avatar URL is signed here so client components never touch
  * Storage themselves.
+ *
+ * The unread notification count is resolved here too: the bell lives in the
+ * chrome, so it is part of the layout rather than something every page below
+ * would have to remember to ask for.
  */
 export default async function AppLayout({
   children,
@@ -23,23 +28,27 @@ export default async function AppLayout({
   const profile = await requireApprovedMember();
   const locale = await getLocale();
   const supabase = await createClient();
-  const avatarUrl = await signedStorageUrl(supabase, profile.avatar_path);
 
-  const faculty = facultyOptions.find(
-    (option) => option.value === profile.faculty,
-  );
-  const headlineParts = [
-    faculty ? (locale === "ar" ? faculty.nameAr : faculty.nameEn) : null,
-    profile.graduation_year ? String(profile.graduation_year) : null,
-  ].filter((part): part is string => Boolean(part));
+  const [avatarUrl, unreadNotifications] = await Promise.all([
+    signedStorageUrl(supabase, profile.avatar_path),
+    getUnreadNotificationCount(),
+  ]);
 
   const member: ChromeMember = {
     fullName: profile.full_name,
     username: profile.username,
-    headline: headlineParts.length > 0 ? headlineParts.join(" · ") : null,
+    headline: headlineForMember(
+      profile.faculty,
+      profile.graduation_year,
+      locale,
+    ),
     avatarUrl,
     isAdmin: profile.role === "admin",
   };
 
-  return <AppShell member={member}>{children}</AppShell>;
+  return (
+    <AppShell member={member} unreadNotifications={unreadNotifications}>
+      {children}
+    </AppShell>
+  );
 }

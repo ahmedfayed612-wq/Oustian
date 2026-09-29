@@ -1,12 +1,13 @@
 "use client";
 
-import { Bell, Search, SquarePen } from "lucide-react";
+import { Search, SquarePen } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { BrandMark } from "@/components/brand/BrandMark";
+import { BrandMark, PeakMark } from "@/components/brand/BrandMark";
 import { Avatar } from "@/components/ui/Avatar";
 import { buttonClasses } from "@/components/ui/Button";
 import { iconButtonClasses } from "@/components/ui/icon-button-classes";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { NotificationButton } from "@/features/notifications/notification-button";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils/cn";
 import { LocaleSwitcher } from "./LocaleSwitcher";
@@ -14,28 +15,43 @@ import type { ChromeMember } from "./member";
 import { isNavItemActive, navItems } from "./nav-items";
 
 /**
- * The social-network top bar: brand + search on the left, the section tabs
- * centred (the pattern Facebook and LinkedIn both use so the current area is
- * always visible), and the action cluster on the right. Everything the tabs
- * carry is duplicated in the left rail on lg+ and in the bottom bar on phones,
- * so nothing becomes unreachable at any width.
+ * The social-network top bar: brand + search on the start edge, the section
+ * tabs centred (the pattern Facebook and LinkedIn both use so the current area
+ * is always visible), and the action cluster on the end edge. Everything the
+ * tabs carry is duplicated in the left rail on lg+ and in the bottom bar on
+ * phones, so nothing becomes unreachable at any width.
+ *
+ * The bar is width-budgeted rather than merely responsive: a 360 px screen gets
+ * the mark (not the wordmark), search, create, the language indicator and the
+ * bell — five 44 px targets that fit — while the theme switch (also in
+ * Settings) and the avatar (Profile is a bottom-bar tab) appear once there is
+ * room at 640 px and 768 px. Without that budget the row overflows the
+ * viewport, which is exactly how a phone ends up scrolling sideways.
  */
-export function TopBar({ member }: { member: ChromeMember }) {
+export function TopBar({
+  member,
+  unreadNotifications,
+}: {
+  member: ChromeMember;
+  unreadNotifications: number;
+}) {
   const tNav = useTranslations("Nav");
-  const tTopBar = useTranslations("TopBar");
   const tBrand = useTranslations("Brand");
   const tSearch = useTranslations("Search");
   const pathname = usePathname();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface/95 pt-safe backdrop-blur-md">
-      <div className="relative mx-auto flex h-14 w-full max-w-[78rem] items-center gap-2 px-2 md:px-4">
+      <div className="relative mx-auto flex h-14 w-full max-w-[78rem] items-center gap-1.5 px-2 md:gap-2 md:px-4">
         <Link
           href="/"
           aria-label={tBrand("homeLabel")}
-          className="inline-flex shrink-0 rounded-control"
+          className="inline-flex shrink-0 items-center rounded-control"
         >
-          <BrandMark size="md" />
+          {/* Mark only on phones, full lockup from `sm` — the wordmark alone
+              is wider than the rest of the cluster put together. */}
+          <PeakMark className="h-5 w-[30px] sm:hidden" />
+          <BrandMark size="md" className="hidden sm:inline-flex" />
         </Link>
 
         {/* Search: a field from xl, an icon button below that. */}
@@ -115,22 +131,18 @@ export function TopBar({ member }: { member: ChromeMember }) {
           </Link>
 
           <LocaleSwitcher />
-          <ThemeToggle />
 
-          <Link
-            href="/notifications"
-            aria-label={tTopBar("notifications")}
-            title={tTopBar("notifications")}
-            className={cn(iconButtonClasses(), "hidden md:inline-flex")}
-          >
-            <Bell className="size-5" aria-hidden="true" />
-          </Link>
+          {/* The theme cycle also lives in Settings, so on a phone the header
+              spends its width on destinations that exist nowhere else. */}
+          <ThemeToggle className="hidden sm:inline-flex" />
+
+          <NotificationButton unreadCount={unreadNotifications} />
 
           <Link
             href="/profile"
             aria-label={member.fullName}
             title={member.fullName}
-            className="ms-1 inline-flex rounded-pill"
+            className="ms-1 hidden rounded-pill md:inline-flex"
           >
             <Avatar
               size="sm"

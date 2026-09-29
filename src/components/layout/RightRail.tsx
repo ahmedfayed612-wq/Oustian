@@ -2,12 +2,12 @@ import { getTranslations } from "next-intl/server";
 import { UniversityLogo } from "@/components/brand/UniversityLogo";
 import { Avatar } from "@/components/ui/Avatar";
 import { Card } from "@/components/ui/Card";
-import { requireApprovedMember } from "@/features/auth/session";
 import { ConnectButton } from "@/features/connections/connect-button";
-import { listSuggestedMembers } from "@/features/connections/queries";
+import { getSuggestedPeople } from "@/features/connections/suggested-members";
 import { Link } from "@/i18n/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { signedStorageUrls } from "@/lib/supabase/storage";
+
+/** How many suggestions the rail shows (it has room for a short list). */
+const RAIL_SUGGESTION_COUNT = 5;
 
 /**
  * Right-hand rail (xl and wider). Holds the suggestion list and the campus
@@ -16,19 +16,15 @@ import { signedStorageUrls } from "@/lib/supabase/storage";
  *
  * Suggestions are real: approved members the viewer has no connection row
  * with yet, newest first (a fresh face is the one worth introducing). The
- * viewer's session resolves through the per-request cache, so the rail adds
- * no extra auth round trip to the page it sits on.
+ * candidates and their signed avatars come from the request-cached accessor, so
+ * the rail costs no extra query on a page that already asked (the home feed
+ * interleaves the same people lower down).
  */
 export async function RightRail() {
   const t = await getTranslations("Rail");
-  const viewer = await requireApprovedMember();
-
-  const supabase = await createClient();
-  const suggestions = await listSuggestedMembers(supabase, viewer.id, 5);
-
-  const avatarUrls = await signedStorageUrls(
-    supabase,
-    suggestions.map((person) => person.avatar_path),
+  const suggestions = (await getSuggestedPeople()).slice(
+    0,
+    RAIL_SUGGESTION_COUNT,
   );
 
   return (
@@ -53,22 +49,15 @@ export async function RightRail() {
                 >
                   <Avatar
                     size="sm"
-                    name={person.full_name}
-                    src={
-                      person.avatar_path
-                        ? (avatarUrls[person.avatar_path] ?? null)
-                        : null
-                    }
+                    name={person.fullName}
+                    src={person.avatarUrl}
                   />
                   <span className="min-w-0 flex flex-col">
                     <span className="block truncate text-sm font-semibold text-text">
-                      {person.full_name}
+                      {person.fullName}
                     </span>
-                    <span
-                      className="block truncate text-xs text-muted"
-                      dir="ltr"
-                    >
-                      @{person.username}
+                    <span className="block truncate text-xs text-muted">
+                      {person.headline ?? `@${person.username}`}
                     </span>
                   </span>
                 </Link>

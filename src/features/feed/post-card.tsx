@@ -346,7 +346,7 @@ export function PostCard({
 
       {post.body ? (
         <p
-          className="px-3.5 pb-3 text-[0.9375rem] leading-relaxed text-text"
+          className="px-3.5 pb-3 text-[0.9375rem] leading-relaxed break-words text-text"
           dir="auto"
         >
           {post.body}

@@ -104,7 +104,10 @@ export function StoryTray({
         </Link>
       </div>
 
-      <ul className="mt-3 flex list-none gap-3 overflow-x-auto pb-1">
+      {/* A scrollable row, not a clipping one: the rail can be wider than the
+          phone, and `overscroll-contain` stops a swipe at its end from starting
+          to scroll the feed behind it. */}
+      <ul className="mt-3 flex list-none gap-3 overflow-x-auto overscroll-x-contain pb-1">
         {/* The member's own tile: view when they have a story, add when not. */}
         <li className="shrink-0">
           {own ? (

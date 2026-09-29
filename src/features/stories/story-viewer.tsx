@@ -14,7 +14,7 @@ import { useFormatter, useTranslations } from "next-intl";
 import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils/cn";
 import { StoryViewersSheet } from "./story-viewers-sheet";
-import { applyStoryView, neighbourStoryIndex } from "./queries";
+import { applyStoryView, isVideoMime, neighbourStoryIndex } from "./queries";
 import {
   deleteStoryAction,
   loadStoryRingAction,
@@ -249,6 +249,7 @@ export function StoryViewer({
   // row policies enforce, mirrored in the UI so nothing is offered then refused.
   const isOwnRing = Boolean(meId) && ring?.author.id === meId;
   const isPending = isCurrentRingLoading || status === "loading";
+  const isVideo = Boolean(current && isVideoMime(current.mimeType));
 
   return (
     <div
@@ -360,25 +361,49 @@ export function StoryViewer({
                   maxHeight: "100%",
                 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={current.url}
-                  alt={current.caption ?? ""}
-                  className="max-h-full max-w-full object-contain"
-                />
+                {isVideoMime(current.mimeType) ? (
+                  // A clip keeps its player controls: a story is tap-to-navigate,
+                  // and swallowing the tap zones' neighbours would make pausing
+                  // impossible. Muted + inline so iOS does not hijack playback.
+                  <video
+                    key={current.id}
+                    src={current.url}
+                    controls
+                    playsInline
+                    muted
+                    autoPlay
+                    className="max-h-full max-w-full object-contain"
+                  />
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={current.url}
+                    alt={current.caption ?? ""}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                )}
 
-                {/* Tap zones: the touch gestures, mirrored by the arrows below. */}
+                {/* Tap zones: the touch gestures, mirrored by the arrows below.
+                    A clip keeps its controls at the bottom, so over video the
+                    zones shrink to the upper third instead of swallowing every
+                    tap on play/pause — swiping still moves between stories. */}
                 <button
                   type="button"
                   onClick={goPrevious}
                   aria-label={t("previousStory")}
-                  className="absolute inset-y-0 left-0 w-1/3 focus-visible:outline-2 focus-visible:outline-brand"
+                  className={cn(
+                    "absolute left-0 w-1/3 focus-visible:outline-2 focus-visible:outline-brand",
+                    isVideo ? "top-0 h-1/3" : "inset-y-0",
+                  )}
                 />
                 <button
                   type="button"
                   onClick={goNext}
                   aria-label={t("nextStory")}
-                  className="absolute inset-y-0 right-0 w-1/3 focus-visible:outline-2 focus-visible:outline-brand"
+                  className={cn(
+                    "absolute right-0 w-1/3 focus-visible:outline-2 focus-visible:outline-brand",
+                    isVideo ? "top-0 h-1/3" : "inset-y-0",
+                  )}
                 />
 
                 {current.caption ? (

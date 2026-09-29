@@ -8,7 +8,6 @@ import {
   buildMediaKey,
   isValidMediaKey,
   MAX_IMAGE_BYTES,
-  MIN_IMAGE_DIMENSION,
 } from "./limits.ts";
 
 /** Helper: builds a minimal valid PNG header with arbitrary width and height. */

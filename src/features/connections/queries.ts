@@ -19,6 +19,14 @@ export type MemberCard = Pick<
   "id" | "username" | "full_name" | "avatar_path"
 >;
 
+/**
+ * A suggested member carries the faculty and graduation year too: the feed
+ * module and the right rail show "Engineering · 2027" under the name, which is
+ * the only context that makes an introduction useful on a campus network.
+ */
+export type SuggestedMember = MemberCard &
+  Pick<Tables<"profiles">, "faculty" | "graduation_year">;
+
 /** One indexed row read: the pair row between the viewer and `otherId`. */
 export async function getConnectionState(
   supabase: SupabaseClient<Database>,
@@ -166,7 +174,7 @@ export async function listSuggestedMembers(
   supabase: SupabaseClient<Database>,
   viewerId: string,
   limit = 5,
-): Promise<MemberCard[]> {
+): Promise<SuggestedMember[]> {
   const [linksResult, peopleResult] = await Promise.all([
     supabase
       .from("connections")
@@ -174,7 +182,9 @@ export async function listSuggestedMembers(
       .or(`requester_id.eq.${viewerId},addressee_id.eq.${viewerId}`),
     supabase
       .from("profiles")
-      .select("id, username, full_name, avatar_path")
+      .select(
+        "id, username, full_name, avatar_path, faculty, graduation_year",
+      )
       .eq("status", "approved")
       .neq("id", viewerId)
       .order("created_at", { ascending: false })

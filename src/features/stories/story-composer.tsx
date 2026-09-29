@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useActionState } from "react";
-import { Image as ImageIcon, Loader2, X } from "lucide-react";
+import { ImagePlus, Loader2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { buttonClasses } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -10,23 +10,66 @@ import { SubmitButton } from "@/components/ui/SubmitButton";
 import { initialActionState } from "@/features/auth/action-state";
 import { createMediaUploadTicketAction } from "@/features/media/actions";
 import {
-  MAX_IMAGE_BYTES,
+  kindForFile,
+  maxBytesForKind,
+  measureImage,
+  measureVideo,
+  reEncodeImageToJpeg,
+  shouldReEncode,
+} from "@/features/media/client-media";
+import {
   MAX_STORY_CAPTION_LENGTH,
   MIN_IMAGE_DIMENSION,
+  STORY_ACCEPT_ATTRIBUTE,
   STORY_TTL_HOURS,
+  type StoryMediaKind,
 } from "@/features/media/limits";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { createStoryAction } from "./actions";
 
 /**
- * Story composer: Add story → pick a photo → preview → publish.
+ * Every failure the composer can report, keyed into `Stories.composer.*`.
+ * Codes rather than messages on purpose: the wording is resolved at render, so
+ * a locale switch mid-upload does not leave a stale string on screen.
+ */
+type ComposerError =
+  | "mediaRequired"
+  | "unsupportedType"
+  | "photoTooLarge"
+  | "videoTooLarge"
+  | "tooSmall"
+  | "unreadable"
+  | "uploadFailed"
+  | "tooManyAttempts"
+  | "failed";
+
+/** The media attached to the story, as the server stored it. */
+type AttachedMedia = {
+  /** Storage path minted by the ticket action — the publish payload. */
+  key: string;
+  /** Local `blob:` preview of the exact bytes that were uploaded. */
+  previewUrl: string;
+  kind: StoryMediaKind;
+  width: number;
+  height: number;
+};
+
+/**
+ * Story composer: Add story → pick a photo or video → preview → publish.
  *
- * The plumbing mirrors the post composer deliberately (same ticket → direct
- * upload → server-side byte sniffing, same blob preview, same pending/retry
- * states) so there is one upload behaviour to reason about. What differs is the
- * canvas: a story is a single photo, so the preview is sized by the image's own
- * aspect ratio instead of being cropped to a fixed frame.
+ * The plumbing mirrors the post composer deliberately (ticket → direct upload →
+ * server-side byte sniffing, blob preview, pending/retry states) so there is one
+ * upload behaviour to reason about. What differs is the canvas: a story is one
+ * piece of media, so the preview adopts the media's own aspect ratio instead of
+ * cropping to a fixed frame, and a clip is measured by the browser (which
+ * applies the rotation matrix) before it is uploaded.
+ *
+ * Three failure modes are handled explicitly because they are the ones members
+ * hit on a phone: a file type we cannot store (reported, never uploaded), an
+ * upload that fails in transit (its own message, logged for debugging), and a
+ * retry with the same file — the input is cleared on every path, so picking the
+ * same photo twice always fires `change` again.
  */
 export function StoryComposer() {
   const t = useTranslations("Stories");
@@ -34,18 +77,66 @@ export function StoryComposer() {
   const router = useRouter();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Preview URLs are revoked through a ref so replacing media, removing it and
+  // unmounting all revoke exactly once (the old blob: URL, never the new one).
+  const previewUrlRef = useRef<string | null>(null);
 
   const [state, formAction] = useActionState(
     createStoryAction,
     initialActionState,
   );
 
-  const [mediaKey, setMediaKey] = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [ratio, setRatio] = useState<string>("9 / 16");
+  const [attached, setAttached] = useState<AttachedMedia | null>(null);
   const [caption, setCaption] = useState("");
+  const [preparing, setPreparing] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [clientError, setClientError] = useState<string | null>(null);
+  const [error, setError] = useState<ComposerError | null>(null);
+
+  const busy = preparing || uploading;
+
+  function releasePreview() {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = null;
+  }
+
+  function resetFileInput() {
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function detach() {
+    releasePreview();
+    setAttached(null);
+    resetFileInput();
+  }
+
+  function removeMedia() {
+    detach();
+    setError(null);
+  }
+
+  /**
+   * A rejected publish is always a rejected *upload*: the action deletes the
+   * object when its bytes fail the policy, so the attachment is dropped the
+   * moment the failure arrives — otherwise the member could only ever resubmit
+   * a key whose object no longer exists.
+   *
+   * Adjusted **during render** (React's "state derived from a previous render"
+   * pattern) rather than in an effect: React discards this render's output and
+   * re-runs it before painting, so the stale preview is never shown, and no
+   * effect has to poke state after the commit. `handledErrorFor` records which
+   * failure was already applied so a later selection is not thrown away by the
+   * same one.
+   */
+  const [handledErrorFor, setHandledErrorFor] = useState<typeof state | null>(
+    null,
+  );
+
+  if (state.status === "error" && attached && state !== handledErrorFor) {
+    setHandledErrorFor(state);
+    // The blob URL is revoked by the next `releasePreview()` (a replacement or
+    // the unmount cleanup) — one owner, one revocation.
+    setAttached(null);
+  }
 
   useEffect(() => {
     if (state.status === "success") {
@@ -56,123 +147,139 @@ export function StoryComposer() {
 
   useEffect(() => {
     return () => {
-      if (previewUrl && previewUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(previewUrl);
-      }
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
     };
-  }, [previewUrl]);
+  }, []);
 
+  /**
+   * Validates and uploads one picked file. Nothing is sent to Storage until the
+   * browser has proved it can read the file and that it clears the policy — so
+   * an unsupported file costs one local decode, not a failed round trip.
+   */
   async function handleFileSelect(file: File) {
-    setClientError(null);
+    // A second pick while an upload is in flight is ignored: one upload, one
+    // story, no interleaved previews.
+    if (busy) return;
 
-    if (!file.type.startsWith("image/") || file.size > MAX_IMAGE_BYTES) {
-      setClientError(t("composer.photoInvalid"));
+    setError(null);
+
+    let kind = kindForFile(file);
+
+    if (file.size > maxBytesForKind(kind)) {
+      setError(kind === "video" ? "videoTooLarge" : "photoTooLarge");
+      resetFileInput();
       return;
     }
 
-    const objectUrl = URL.createObjectURL(file);
-    const img = new Image();
-    img.src = objectUrl;
-
-    await new Promise<void>((resolve) => {
-      img.onload = () => resolve();
-      img.onerror = () => resolve();
-    });
-
-    if (
-      img.width > 0 &&
-      img.height > 0 &&
-      (img.width < MIN_IMAGE_DIMENSION || img.height < MIN_IMAGE_DIMENSION)
-    ) {
-      URL.revokeObjectURL(objectUrl);
-      setClientError(t("composer.photoTooSmall"));
-      return;
-    }
-
-    // Portrait, landscape and square all render as themselves: the preview box
-    // adopts the photo's own ratio rather than cropping to a fixed frame.
-    if (img.width > 0 && img.height > 0) {
-      setRatio(`${img.width} / ${img.height}`);
-    }
-
-    setUploading(true);
+    setPreparing(true);
 
     try {
-      const ticket = await createMediaUploadTicketAction(file.type, "story");
+      // Formats we do not store but the browser can paint (HEIC from a phone
+      // camera, an untyped file) are re-encoded to JPEG before upload; anything
+      // the browser cannot read is refused here with an honest message.
+      let upload = file;
+
+      if (shouldReEncode(file)) {
+        const reEncoded = await reEncodeImageToJpeg(file);
+
+        if (!reEncoded) {
+          setError("unsupportedType");
+          return;
+        }
+
+        upload = reEncoded;
+        kind = "image";
+      }
+
+      const dimensions =
+        kind === "video" ? await measureVideo(upload) : await measureImage(upload);
+
+      if (!dimensions) {
+        setError("unreadable");
+        return;
+      }
+
+      if (
+        dimensions.width < MIN_IMAGE_DIMENSION ||
+        dimensions.height < MIN_IMAGE_DIMENSION
+      ) {
+        setError("tooSmall");
+        return;
+      }
+
+      // From here the bytes leave the device. Types that need no re-encode are
+      // uploaded exactly as the picker handed them over.
+      setPreparing(false);
+      setUploading(true);
+
+      const ticket = await createMediaUploadTicketAction(upload.type, "story");
 
       if (!ticket.ok) {
-        setClientError(
-          ticket.code === "photo_wrong_type"
-            ? t("composer.photoWrongType")
-            : t("composer.photoUnreadable"),
+        console.error("[story-composer] upload ticket refused", ticket.code);
+        setError(
+          ticket.code === "photo_wrong_type" ? "unsupportedType" : "uploadFailed",
         );
-        URL.revokeObjectURL(objectUrl);
         return;
       }
 
       const supabase = createClient();
       const { error: uploadError } = await supabase.storage
         .from(ticket.bucket)
-        .uploadToSignedUrl(ticket.path, ticket.token, file, {
-          contentType: file.type,
+        .uploadToSignedUrl(ticket.path, ticket.token, upload, {
+          contentType: upload.type,
         });
 
       if (uploadError) {
+        // Transport-level failure (network, bucket policy, CORS): logged in
+        // full for debugging, reported as a retryable error — never as a
+        // "we couldn't read your file", which would send the member hunting
+        // for a problem with their photo.
         console.error("[story-composer] upload failed", uploadError.message);
-        setClientError(t("composer.photoUnreadable"));
-        URL.revokeObjectURL(objectUrl);
+        setError("uploadFailed");
         return;
       }
 
-      setPreviewUrl(objectUrl);
-      setMediaKey(ticket.path);
-    } catch (error) {
-      console.error("[story-composer] photo upload error", error);
-      setClientError(t("composer.photoUnreadable"));
-      URL.revokeObjectURL(objectUrl);
+      releasePreview();
+
+      const objectUrl = URL.createObjectURL(upload);
+      previewUrlRef.current = objectUrl;
+
+      setAttached({
+        key: ticket.path,
+        previewUrl: objectUrl,
+        kind,
+        width: dimensions.width,
+        height: dimensions.height,
+      });
+    } catch (caught) {
+      console.error("[story-composer] media upload error", caught);
+      setError("uploadFailed");
     } finally {
+      setPreparing(false);
       setUploading(false);
+      // Always clear the input: re-picking the *same* file must fire `change`
+      // again (a failed upload followed by a silent no-op is the worst state a
+      // composer can leave a member in).
+      resetFileInput();
     }
   }
 
-  function removePhoto() {
-    if (previewUrl && previewUrl.startsWith("blob:")) {
-      URL.revokeObjectURL(previewUrl);
-    }
+  const errorMessage = resolveErrorMessage({
+    error,
+    kind: attached?.kind ?? "image",
+    stateCode: state.status === "error" ? state.code : undefined,
+    t,
+    tAuth,
+  });
 
-    setPreviewUrl(null);
-    setMediaKey(null);
-    setClientError(null);
-
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }
-
-  const errorMessage =
-    clientError ??
-    (state.status === "error"
-      ? state.code === "too_many_attempts"
-        ? tAuth("too_many_attempts")
-        : state.code === "invalid_input"
-          ? t("composer.photoRequired")
-          : state.code === "photo_too_large"
-            ? t("composer.photoTooLarge")
-            : state.code === "photo_too_small"
-              ? t("composer.photoTooSmall")
-              : state.code === "photo_wrong_type"
-                ? t("composer.photoWrongType")
-                : state.code === "photo_unreadable"
-                  ? t("composer.photoUnreadable")
-                  : t("composer.failed")
-      : null);
-
-  // One photo is required and the button stays disabled while an upload runs:
-  // no half-published stories and no double submits.
-  const canPublish = Boolean(mediaKey) && !uploading;
+  const canPublish = Boolean(attached) && !busy;
 
   return (
     <form action={formAction} className="flex flex-col gap-3" noValidate>
-      <input type="hidden" name="mediaKey" value={mediaKey ?? ""} />
+      <input type="hidden" name="mediaKey" value={attached?.key ?? ""} />
       <input type="hidden" name="caption" value={caption} />
+      <input type="hidden" name="mediaWidth" value={attached?.width ?? ""} />
+      <input type="hidden" name="mediaHeight" value={attached?.height ?? ""} />
 
       <Card className="flex flex-col gap-3 p-4">
         <p className="text-sm text-muted">
@@ -180,27 +287,9 @@ export function StoryComposer() {
           {t("composer.ttlNote", { hours: STORY_TTL_HOURS })}
         </p>
 
-        {previewUrl ? (
+        {attached ? (
           <div className="flex flex-col gap-2">
-            <div
-              className="relative mx-auto flex max-h-[28rem] w-full items-center justify-center overflow-hidden rounded-control bg-surface-2"
-              style={{ aspectRatio: ratio, maxWidth: "100%" }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={previewUrl}
-                alt=""
-                className="max-h-full max-w-full object-contain"
-              />
-              <button
-                type="button"
-                onClick={removePhoto}
-                aria-label={t("composer.removePhoto")}
-                className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-pill bg-black/60 text-white transition hover:bg-black/80 focus-visible:outline-2 focus-visible:outline-brand"
-              >
-                <X className="size-4" aria-hidden="true" />
-              </button>
-            </div>
+            <MediaPreview media={attached} removeLabel={t("composer.removeMedia")} onRemove={removeMedia} />
 
             <label htmlFor="story-caption" className="sr-only">
               {t("composer.captionLabel")}
@@ -217,7 +306,7 @@ export function StoryComposer() {
                 }
                 maxLength={MAX_STORY_CAPTION_LENGTH}
                 placeholder={t("composer.captionPlaceholder")}
-                className="w-full rounded-control border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-muted focus:border-brand focus:outline-none"
+                className="w-full min-w-0 rounded-control border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-muted focus:border-brand focus:outline-none"
               />
               <span className="shrink-0 text-xs tabular-nums text-muted">
                 {caption.length}/{MAX_STORY_CAPTION_LENGTH}
@@ -228,14 +317,14 @@ export function StoryComposer() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
+            disabled={busy}
             className="flex flex-col items-center gap-2 rounded-control border border-dashed border-border bg-surface-2/60 px-6 py-10 text-center transition-colors hover:border-border-strong disabled:opacity-60"
           >
             <span className="flex size-11 items-center justify-center rounded-pill bg-brand-soft text-brand">
-              <ImageIcon className="size-5" aria-hidden="true" />
+              <ImagePlus className="size-5" aria-hidden="true" />
             </span>
             <span className="text-sm font-semibold text-text">
-              {t("composer.pickPhoto")}
+              {t("composer.pickMedia")}
             </span>
             <span className="text-xs text-muted">{t("composer.pickHint")}</span>
           </button>
@@ -244,32 +333,31 @@ export function StoryComposer() {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept={STORY_ACCEPT_ATTRIBUTE}
           className="hidden"
+          disabled={busy}
           onChange={(event) => {
             const file = event.target.files?.[0];
             if (file) void handleFileSelect(file);
+            else resetFileInput();
           }}
         />
 
-        {uploading ? (
-          <p className="flex items-center gap-2 text-xs text-muted">
-            <Loader2
-              className="size-4 animate-spin text-brand"
-              aria-hidden="true"
-            />
-            {t("composer.uploading")}
+        {preparing || uploading ? (
+          <p className="flex items-center gap-2 text-xs text-muted" role="status">
+            <Loader2 className="size-4 animate-spin text-brand" aria-hidden="true" />
+            {preparing ? t("composer.preparing") : t("composer.uploading")}
           </p>
         ) : null}
 
-        {previewUrl ? (
+        {attached ? (
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
+            disabled={busy}
             className="self-start rounded-pill px-3 py-1.5 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-text focus-visible:outline-2 focus-visible:outline-brand"
           >
-            {t("composer.replacePhoto")}
+            {t("composer.replaceMedia")}
           </button>
         ) : null}
 
@@ -295,3 +383,105 @@ export function StoryComposer() {
   );
 }
 
+/**
+ * The attached media, as itself: a clip gets real player controls (so it can be
+ * paused, which a tap-to-navigate story view must not swallow) and both kinds
+ * keep their own aspect ratio inside a bounded frame.
+ */
+function MediaPreview({
+  media,
+  removeLabel,
+  onRemove,
+}: {
+  media: AttachedMedia;
+  removeLabel: string;
+  onRemove: () => void;
+}) {
+  return (
+    <div
+      className="relative mx-auto flex max-h-[28rem] w-full items-center justify-center overflow-hidden rounded-control bg-surface-2"
+      style={{
+        aspectRatio: `${media.width} / ${media.height}`,
+        maxWidth: "100%",
+      }}
+    >
+      {media.kind === "video" ? (
+        <video
+          src={media.previewUrl}
+          controls
+          playsInline
+          muted
+          className="max-h-full max-w-full object-contain"
+        />
+      ) : (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={media.previewUrl}
+          alt=""
+          className="max-h-full max-w-full object-contain"
+        />
+      )}
+
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={removeLabel}
+        className="absolute top-2 end-2 flex size-8 items-center justify-center rounded-pill bg-black/60 text-white transition hover:bg-black/80 focus-visible:outline-2 focus-visible:outline-brand"
+      >
+        <X className="size-4" aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+/**
+ * One message at a time, most specific first: a local error the member can act
+ * on now, then the server's own verdict, and finally the generic retry.
+ */
+function resolveErrorMessage({
+  error,
+  kind,
+  stateCode,
+  t,
+  tAuth,
+}: {
+  error: ComposerError | null;
+  kind: StoryMediaKind;
+  stateCode: string | undefined;
+  t: ReturnType<typeof useTranslations<"Stories">>;
+  tAuth: ReturnType<typeof useTranslations<"Auth.errors">>;
+}): string | null {
+  const code = error ?? mapServerCode(stateCode, kind);
+
+  if (!code) return null;
+  if (code === "tooManyAttempts") return tAuth("too_many_attempts");
+
+  return t(`composer.${code}`);
+}
+
+/** The publish action's codes, in the composer's own vocabulary. */
+function mapServerCode(
+  stateCode: string | undefined,
+  kind: StoryMediaKind,
+): ComposerError | null {
+  switch (stateCode) {
+    case "invalid_input":
+      return "mediaRequired";
+    case "photo_wrong_type":
+      return "unsupportedType";
+    case "photo_too_large":
+      return kind === "video" ? "videoTooLarge" : "photoTooLarge";
+    case "photo_too_small":
+      return "tooSmall";
+    case "photo_unreadable":
+      return "unreadable";
+    case "too_many_attempts":
+      return "tooManyAttempts";
+    case undefined:
+    case "idle":
+    case "success":
+      return null;
+    default:
+      return "failed";
+  }
+}

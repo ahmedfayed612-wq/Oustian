@@ -5,7 +5,11 @@ import { getLocale } from "next-intl/server";
 import type { ActionState } from "@/features/auth/action-state";
 import { requireApprovedMember } from "@/features/auth/session";
 import { validatePhotoBytes } from "@/features/media/image";
-import { isValidMediaKey, STORY_MEDIA_BUCKET } from "@/features/media/limits";
+import {
+  STORY_MEDIA_BUCKET,
+  storyMediaKindForKey,
+} from "@/features/media/limits";
+import { validateVideoBytes } from "@/features/media/video";
 import {
   consumeRateLimit,
   hashRateLimitKey,
@@ -19,7 +23,7 @@ import {
   type StoryItem,
   type StoryViewerRow,
 } from "./queries";
-import { storySchema, uuidPattern } from "./validation";
+import { probeDimensions, storySchema, uuidPattern } from "./validation";
 
 /**
  * Story writes and on-demand reads.
@@ -27,9 +31,9 @@ import { storySchema, uuidPattern } from "./validation";
  * Two things are never taken from the client: who owns the upload (the ticket
  * action builds the key from the session, and `create_story` re-checks the
  * folder) and what the bytes actually are (the stored object is downloaded and
- * sniffed here before any row exists). Everything else — visibility, view
- * dedupe, deletion rights — lives in Postgres, so a crafted request cannot
- * reach past it.
+ * sniffed here before any row exists — a photo by its signature, a clip by its
+ * container). Everything else — visibility, view dedupe, deletion rights —
+ * lives in Postgres, so a crafted request cannot reach past it.
  */
 
 export type StoryRingPayload = {
@@ -64,6 +68,8 @@ export async function createStoryAction(
   const parsed = storySchema.safeParse({
     mediaKey: formData.get("mediaKey"),
     caption: formData.get("caption"),
+    mediaWidth: formData.get("mediaWidth") ?? undefined,
+    mediaHeight: formData.get("mediaHeight") ?? undefined,
   });
 
   if (!parsed.success) {
@@ -89,8 +95,13 @@ export async function createStoryAction(
   const { mediaKey, caption } = parsed.data;
 
   // The key must sit in the caller's own folder — a forged path can never
-  // attach someone else's object, and the RPC checks this again.
-  if (!isValidMediaKey(mediaKey, viewer.id)) {
+  // attach someone else's object, and the RPC checks this again. The key's
+  // extension also decides *how* the bytes are read back, and the ticket
+  // action built it from the claimed MIME, so a mislabelled file fails the
+  // matching sniffer below instead of reaching the database.
+  const kind = storyMediaKindForKey(mediaKey, viewer.id);
+
+  if (!kind) {
     console.error("[stories] invalid media key format/ownership", mediaKey);
     return { status: "error", code: "photo_wrong_type" };
   }
@@ -109,23 +120,43 @@ export async function createStoryAction(
   }
 
   const bytes = new Uint8Array(await fileData.arrayBuffer());
-  const validation = validatePhotoBytes(bytes, bytes.length);
+
+  const validation =
+    kind === "video"
+      ? validateVideoBytes(bytes, bytes.length, probeDimensions(parsed.data))
+      : validatePhotoBytes(bytes, bytes.length);
 
   if (!validation.ok) {
-    console.warn("[stories] photo validation failed on server", validation.code);
+    console.warn(
+      `[stories] ${kind} validation failed on server`,
+      validation.code,
+    );
     // Never keep bytes that failed the policy.
     await supabase.storage.from(STORY_MEDIA_BUCKET).remove([mediaKey]);
     return { status: "error", code: validation.code };
   }
 
-  const { image } = validation;
+  // The success shapes are distinguishable: a video carries the sniffed
+  // container, an image carries the sniffed format and both dimensions.
+  const media =
+    "video" in validation
+      ? {
+          mime: validation.video.mime,
+          width: validation.width,
+          height: validation.height,
+        }
+      : {
+          mime: validation.image.mime,
+          width: validation.image.width,
+          height: validation.image.height,
+        };
 
   const { error: rpcError } = await supabase.rpc("create_story", {
     p_media_key: mediaKey,
-    p_media_mime: image.mime,
+    p_media_mime: media.mime,
     p_media_size: bytes.length,
-    p_media_width: image.width,
-    p_media_height: image.height,
+    p_media_width: media.width,
+    p_media_height: media.height,
     p_caption: caption || undefined,
   });
 

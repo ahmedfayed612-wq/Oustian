@@ -16,14 +16,17 @@ import type { ChromeMember } from "./member";
  * phone fall back to a single comfortable column with the bottom bar for
  * navigation — exactly how the big social apps collapse.
  *
- * The member is resolved by the `(app)` layout before this renders, so the
- * chrome never triggers its own auth round-trip.
+ * The member and the unread notification count are resolved by the `(app)`
+ * layout before this renders, so the chrome never triggers its own auth or
+ * notification round-trip.
  */
 export async function AppShell({
   member,
+  unreadNotifications,
   children,
 }: {
   member: ChromeMember;
+  unreadNotifications: number;
   children: React.ReactNode;
 }) {
   const t = await getTranslations("Common");
@@ -37,9 +40,13 @@ export async function AppShell({
         {t("skipToContent")}
       </a>
 
-      <TopBar member={member} />
+      <TopBar member={member} unreadNotifications={unreadNotifications} />
 
-      <div className="mx-auto flex w-full max-w-[78rem] items-start gap-6 px-3 pt-3 lg:pt-5">
+      {/* `overflow-x-clip` is the width guarantee: every column below is
+          width-constrained on its own, and any single element that is not
+          (a wide media preview, a long unbroken string) can only ever be
+          clipped, never turn the page into a horizontal scroller. */}
+      <div className="mx-auto flex w-full max-w-[78rem] items-start gap-6 overflow-x-clip px-3 pt-3 lg:pt-5">
         <SideNav member={member} />
 
         <main
