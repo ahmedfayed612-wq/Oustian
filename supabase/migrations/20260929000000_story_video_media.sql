@@ -66,6 +66,8 @@ alter table public.story_media
 -- 50 MB: the video ceiling. Images stay capped at 10 MB by the publish action
 -- (`MAX_IMAGE_BYTES`), which is the check that actually runs for a photo.
 alter table public.story_media
+  add constraint story_media_file_size_check
+  check (file_size between 1 and 52428800);
 
 -- ---------------------------------------------------------------------------
 -- 2. `create_story()` — same signature, same grants, widened media policy
@@ -165,6 +167,3 @@ update storage.buckets
 -- The read/insert/delete policies on `storage.objects` are unchanged: media is
 -- still keyed `<owner uuid>/<uuid>.<ext>`, still private, still gated by
 -- `can_view_story_object`, and still immutable once stored.
-
-  add constraint story_media_file_size_check
-  check (file_size between 1 and 52428800);
