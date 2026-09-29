@@ -114,8 +114,12 @@ export async function createStoryAction(
   if (downloadError || !fileData) {
     console.error(
       "[stories] failed to download uploaded media",
+      mediaKey,
       downloadError?.message,
     );
+    // The object is unusable to us; take it with us so a failed publish never
+    // strands bytes in the bucket (the owner may delete their own folder).
+    await supabase.storage.from(STORY_MEDIA_BUCKET).remove([mediaKey]);
     return { status: "error", code: "photo_unreadable" };
   }
 

@@ -37,6 +37,48 @@ export type MediaDimensions = { width: number; height: number };
 const RE_ENCODE_QUALITY = 0.92;
 
 /**
+ * Upper bound for a decode/measure. Normally these resolve in milliseconds;
+ * a browser that neither loads nor errors a file it cannot decode (unusual
+ * codecs do this) would otherwise leave the composer on "Preparing…" forever,
+ * so the wait is bounded and resolves as a failure — which the composer then
+ * reports as an unreadable file.
+ */
+const MEASURE_TIMEOUT_MS = 15_000;
+
+/**
+ * Resolves `true` when the element signals `okEvent`, `false` on error or
+ * timeout. Listeners are attached **before** `src` is set by the caller, so a
+ * cached blob URL that resolves in the same tick still reports back.
+ */
+function whenMediaReady(
+  element: HTMLImageElement | HTMLVideoElement,
+  okEvent: "load" | "loadedmetadata",
+): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    let settled = false;
+
+    function settle(ok: boolean) {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      element.onload = null;
+      element.onerror = null;
+      element.removeEventListener(okEvent, onOk);
+      resolve(ok);
+    }
+
+    function onOk() {
+      settle(true);
+    }
+
+    const timer = window.setTimeout(() => settle(false), MEASURE_TIMEOUT_MS);
+
+    element.onerror = () => settle(false);
+    element.addEventListener(okEvent, onOk);
+  });
+}
+
+/**
  * The kind a picked file is treated as. A file the browser cannot type at all
  * (`""` — some Android pickers) is treated as an image, because that is what
  * the re-encode path can rescue.
@@ -72,15 +114,14 @@ export function maxBytesForKind(kind: StoryMediaKind): number {
 export async function measureImage(file: File): Promise<MediaDimensions | null> {
   const objectUrl = URL.createObjectURL(file);
   const image = new Image();
+
+  const loaded = whenMediaReady(image, "load");
   image.src = objectUrl;
 
-  const loaded = await new Promise<boolean>((resolve) => {
-    image.onload = () => resolve(true);
-    image.onerror = () => resolve(false);
-  });
+  const ok = await loaded;
 
   const dimensions =
-    loaded && image.naturalWidth > 0 && image.naturalHeight > 0
+    ok && image.naturalWidth > 0 && image.naturalHeight > 0
       ? { width: image.naturalWidth, height: image.naturalHeight }
       : null;
 
@@ -104,17 +145,16 @@ export async function measureVideo(
   video.preload = "metadata";
   video.muted = true;
   video.playsInline = true;
-  video.src = objectUrl;
 
-  const loaded = await new Promise<boolean>((resolve) => {
-    video.onloadedmetadata = () => resolve(true);
-    video.onerror = () => resolve(false);
-    // Some browsers only fire the metadata event once decoding is attempted.
-    void video.load();
-  });
+  const ready = whenMediaReady(video, "loadedmetadata");
+  video.src = objectUrl;
+  // Some browsers only fetch metadata once decoding is requested.
+  void video.load();
+
+  const ok = await ready;
 
   const dimensions =
-    loaded && video.videoWidth > 0 && video.videoHeight > 0
+    ok && video.videoWidth > 0 && video.videoHeight > 0
       ? { width: video.videoWidth, height: video.videoHeight }
       : null;
 
@@ -186,14 +226,13 @@ async function decodeImage(file: File): Promise<DecodedImage | null> {
 
   const objectUrl = URL.createObjectURL(file);
   const image = new Image();
+
+  const loaded = whenMediaReady(image, "load");
   image.src = objectUrl;
 
-  const loaded = await new Promise<boolean>((resolve) => {
-    image.onload = () => resolve(true);
-    image.onerror = () => resolve(false);
-  });
+  const ok = await loaded;
 
-  if (!loaded || image.naturalWidth === 0) {
+  if (!ok || image.naturalWidth === 0) {
     URL.revokeObjectURL(objectUrl);
     return null;
   }
