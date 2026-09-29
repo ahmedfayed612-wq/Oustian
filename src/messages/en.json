@@ -265,7 +265,8 @@
         "not_authorised": "You do not have access to that.",
         "avatar_upload_failed": "The photo could not be uploaded. Try a JPG, PNG or WebP under 5 MB."
       }
-    }
+    },
+    "signOut": "Sign out"
   },
   "Admin": {
     "title": "Admin tools",

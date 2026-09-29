@@ -265,7 +265,8 @@
         "not_authorised": "مالكش صلاحية على ده.",
         "avatar_upload_failed": "الصورة ماترفعتش. جرّب JPG أو PNG أو WebP أقل من ٥ ميجا."
       }
-    }
+    },
+    "signOut": "تسجيل الخروج"
   },
   "Admin": {
     "title": "أدوات الإدارة",

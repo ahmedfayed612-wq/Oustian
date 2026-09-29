@@ -1,10 +1,11 @@
-import { CalendarDays, GraduationCap, PenLine, UserRound } from "lucide-react";
+import { CalendarDays, GraduationCap, LogOut, PenLine, UserRound } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Avatar } from "@/components/ui/Avatar";
-import { buttonClasses } from "@/components/ui/Button";
+import { Button, buttonClasses } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { signOutAction } from "@/features/auth/actions";
 import { requireApprovedMember } from "@/features/auth/session";
 import { ConnectButton } from "@/features/connections/connect-button";
 import { ConnectionsCount } from "@/features/connections/connections-count";
@@ -87,12 +88,20 @@ export default async function ProfilePage() {
               src={avatarUrl}
               className="ring-4 ring-surface"
             />
-            <Link
-              href="/profile/edit"
-              className={buttonClasses({ variant: "secondary", size: "sm" })}
-            >
-              {t("edit")}
-            </Link>
+            <div className="ms-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
+              <Link
+                href="/profile/edit"
+                className={buttonClasses({ variant: "secondary", size: "sm" })}
+              >
+                {t("edit")}
+              </Link>
+              <form action={signOutAction}>
+                <Button type="submit" variant="ghost" size="sm">
+                  <LogOut className="size-4" aria-hidden="true" />
+                  {t("signOut")}
+                </Button>
+              </form>
+            </div>
           </div>
 
           <h1 className="mt-3 text-xl font-bold text-text">
