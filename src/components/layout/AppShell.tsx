@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { Suspense } from "react";
 import { BottomNav } from "./BottomNav";
 import { RightRail } from "./RightRail";
 import { SideNav } from "./SideNav";
@@ -59,7 +60,9 @@ export async function AppShell({
           </div>
         </main>
 
-        <RightRail />
+        <Suspense fallback={null}>
+          <RightRail />
+        </Suspense>
       </div>
 
       <BottomNav />

@@ -23,13 +23,21 @@ export default async function ConversationPage({
 
   const viewer = await requireApprovedMember();
   const supabase = await createClient();
-  const thread = await loadThread(supabase, id, viewer.id);
+  // Parallel: membership+messages+peer, streak, and avatar all resolve
+  // together instead of one-after-another (3 serial round trips -> 1 wave).
+  // Mark-read is fire-and-forget after the render data is in flight.
+  const [thread, streakRes] = await Promise.all([
+    loadThread(supabase, id, viewer.id),
+    supabase.from("conversation_streaks" as never).select("current_streak").eq("conversation_id" as never, id).maybeSingle(),
+  ]);
 
   if (!thread.isMember) notFound();
 
-  await markConversationReadAction(id);
-  const { data: streakRow } = await supabase.from("conversation_streaks" as never).select("current_streak").eq("conversation_id" as never, id).maybeSingle();
-  const streak = ((streakRow as { current_streak?: number } | null)?.current_streak ?? 0) as number;
+  try {
+    const p = markConversationReadAction(id);
+    if (p && typeof (p as Promise<void>).catch === "function") (p as Promise<void>).catch(() => {});
+  } catch { /* read cursor is best-effort */ }
+  const streak = (((streakRes as { data?: { current_streak?: number } | null }).data)?.current_streak ?? 0) as number;
 
   const avatarUrl = thread.peer
     ? await signedStorageUrl(supabase, thread.peer.avatarPath)

@@ -30,7 +30,14 @@ export default async function AppLayout({
   const locale = await getLocale();
   const supabase = await createClient();
 
-  try { await (supabase as unknown as never as { rpc: (n: string) => Promise<unknown> }).rpc("record_app_visit"); } catch { /* visits table may not exist yet */ }
+  // Fire-and-forget: never block first paint on the visit RPC. The streak
+  // still records; the layout just doesn't wait for the round trip.
+  try {
+    const rpc = (supabase as unknown as never as { rpc: (n: string) => Promise<unknown> }).rpc("record_app_visit");
+    if (rpc && typeof (rpc as Promise<unknown>).catch === "function") {
+      (rpc as Promise<unknown>).catch(() => {});
+    }
+  } catch { /* visits table may not exist yet */ }
   const [avatarUrl, unreadNotifications] = await Promise.all([
     signedStorageUrl(supabase, profile.avatar_path),
     getUnreadNotificationCount(),
