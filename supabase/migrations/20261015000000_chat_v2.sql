@@ -37,5 +37,5 @@
  alter table public.notifications add column if not exists conversation_id uuid references public.conversations(id) on delete cascade;
  alter table public.notifications add column if not exists message_id uuid references public.messages(id) on delete cascade;
  alter table public.notifications drop constraint if exists notifications_type_check;
- do $$ begin alter table public.notifications add constraint notifications_type_check check (type in ('post_like','post_comment','post_fire','post_insight','post_same','post_talk','comment_reaction','comment_talk','connection_request','connection_accepted','group_invite','group_invite_accepted','group_invite_declined','group_member_removed','group_ownership_transferred','chat_message')); exception when duplicate_object then null; end $$;
+ do $$ begin alter table public.notifications add constraint notifications_type_check check (type in ('post_like','post_comment','connection_request','post_reaction','post_talk','comment_reaction','comment_talk','story_new','group_invite','group_invite_accepted','group_invite_declined','group_member_removed','group_ownership_transferred','connection_accepted','chat_message')); exception when duplicate_object then null; end $$;
  create index if not exists notifications_chat_idx on public.notifications (recipient_id, created_at desc);
