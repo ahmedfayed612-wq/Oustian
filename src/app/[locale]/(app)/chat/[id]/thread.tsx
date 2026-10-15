@@ -2,7 +2,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
-import { ArrowLeft, Send, Reply, Pencil, Trash2, Smile, Info, X, Flame } from "lucide-react";
+import { ArrowLeft, Send, Reply, Pencil, Trash2, Smile, Info, X, Flame, MoreHorizontal } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -31,7 +31,7 @@ export function Thread({ conversationId, meId, initialMessages, peerName, peerUs
   const [reactions, setReactions] = useState<Reaction[]>([]);
   const [body, setBody] = useState(""); const [errorKey, setErrorKey] = useState<string|null>(null); const [sending, setSending] = useState(false);
   const [replyTo, setReplyTo] = useState<LocalMsg|null>(null); const [editing, setEditing] = useState<LocalMsg|null>(null); const [editBody, setEditBody] = useState("");
-  const [menuFor, setMenuFor] = useState<string|null>(null); const [pickerFor, setPickerFor] = useState<string|null>(null); const [infoFor, setInfoFor] = useState<LocalMsg|null>(null);
+  const [menuFor, setMenuFor] = useState<string|null>(null); const [pickerFor, setPickerFor] = useState<string|null>(null); const [infoFor, setInfoFor] = useState<LocalMsg|null>(null); const [actionsFor, setActionsFor] = useState<string|null>(null);
   const [hasNew, setHasNew] = useState(false); const [stuck, setStuck] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null); const scrollRef = useRef<HTMLDivElement>(null); const atBottom = useRef(true);
   const upsert = useCallback((row: LocalMsg) => setMessages((p) => { const i = p.findIndex((m) => m.id === row.id); if (i>=0) { const n=[...p]; n[i]={...n[i],...row}; return n; } const n=[...p,row].sort((a,b)=>+new Date(a.created_at)-+new Date(b.created_at)); return n.length > 300 ? n.slice(n.length - 300) : n; }),[]);
@@ -93,6 +93,17 @@ export function Thread({ conversationId, meId, initialMessages, peerName, peerUs
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, meId]);
   useEffect(() => { if (atBottom.current) bottomRef.current?.scrollIntoView({ block: "end" }); }, [messages.length]);
+  useEffect(() => {
+    if (!actionsFor && !menuFor) return;
+    const onDown = (e: PointerEvent) => {
+      const el = (e.target as HTMLElement).closest("[data-msg-menu]");
+      if (!el) { setActionsFor(null); setMenuFor(null); }
+    };
+    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === "Escape") { setActionsFor(null); setMenuFor(null); setPickerFor(null); } };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("pointerdown", onDown); document.removeEventListener("keydown", onKey); };
+  }, [actionsFor, menuFor]);
   const onScroll = () => { const el = scrollRef.current; if (!el) return; const near = el.scrollHeight - el.scrollTop - el.clientHeight < 80; atBottom.current = near; if (near) setHasNew(false); };
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); const trimmed = body.trim(); if (!trimmed || sending) return;
@@ -158,10 +169,18 @@ export function Thread({ conversationId, meId, initialMessages, peerName, peerUs
                 <span className={mine?"mt-1 flex items-center justify-end gap-1 text-[0.65rem] font-medium text-on-brand/80":"mt-1 flex items-center justify-end gap-1 text-[0.65rem] font-medium text-muted"}><time dateTime={m.created_at}>{format.dateTime(new Date(m.created_at),{hour:"numeric",minute:"2-digit"})}</time>{(m as {is_edited?:boolean}).is_edited?<span>· {t("edited")}</span>:null}{mine?<MessageStatus state={msgState(m,meId,receipts)} tone="mine" />:null}</span>
                 {counts.size>0?<span className="-mb-1 mt-1.5 flex flex-wrap gap-1">{[...counts.entries()].map(([e,c])=>(<button key={e} type="button" onClick={()=>setPickerFor(m.id)} className={mine?"flex items-center gap-0.5 rounded-full bg-black/20 px-2 py-0.5 text-xs leading-none":"flex items-center gap-0.5 rounded-full border border-border/70 bg-surface-2 px-2 py-0.5 text-xs leading-none shadow-sm"}>{e} <span className="font-semibold">{c}</span></button>))}</span>:null}
               </div>
-              <span className={mine?"mt-0.5 flex justify-end gap-0.5 text-muted opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100":"mt-0.5 flex justify-start gap-0.5 text-muted opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100"}>
-                <button type="button" aria-label={t("reply")} onClick={()=>setReplyTo(m)} className="rounded-full p-1.5 transition-colors hover:bg-surface-2 hover:text-text"><Reply className="size-3.5" /></button>
-                <button type="button" aria-label={t("react")} onClick={()=>setPickerFor(pickerFor===m.id?null:m.id)} className={pickerFor===m.id?"rounded-full bg-surface-2 p-1.5 text-brand":"rounded-full p-1.5 transition-colors hover:bg-surface-2 hover:text-text"}><Smile className="size-3.5" /></button>
-                {mine&&!deleted?(<><button type="button" aria-label={t("edit")} onClick={()=>{setEditing(m);setEditBody(m.body);}} className="rounded-full p-1.5 transition-colors hover:bg-surface-2 hover:text-text"><Pencil className="size-3.5" /></button><button type="button" aria-label={t("delete")} onClick={()=>setMenuFor(menuFor===m.id?null:m.id)} className="rounded-full p-1.5 transition-colors hover:bg-surface-2 hover:text-text"><Trash2 className="size-3.5" /></button><button type="button" aria-label={t("messageInfo")} onClick={()=>setInfoFor(m)} className="rounded-full p-1.5 transition-colors hover:bg-surface-2 hover:text-text"><Info className="size-3.5" /></button></>):null}
+              <span className={mine?"mt-0.5 flex justify-end":"mt-0.5 flex justify-start"} data-msg-menu>
+                <button type="button" aria-label={t("react")} aria-expanded={pickerFor===m.id} onClick={()=>{setActionsFor(null);setMenuFor(null);setPickerFor(pickerFor===m.id?null:m.id);}} className={pickerFor===m.id?"rounded-full bg-surface-2 p-2 text-brand shadow-sm":"rounded-full p-2 text-muted transition-colors hover:bg-surface-2 hover:text-text"}><Smile className="size-4" /></button>
+                <button type="button" aria-label={t("moreActions") ?? "More"} aria-expanded={actionsFor===m.id} onClick={()=>{setPickerFor(null);setMenuFor(null);setActionsFor(actionsFor===m.id?null:m.id);}} className={actionsFor===m.id?"rounded-full bg-surface-2 p-2 text-text shadow-sm":"rounded-full p-2 text-muted transition-colors hover:bg-surface-2 hover:text-text"}><MoreHorizontal className="size-4" /></button>
+                {actionsFor===m.id?(<span className={mine?"absolute end-0 top-full z-20 mt-1 flex min-w-52 flex-col gap-0.5 rounded-2xl border border-border bg-surface p-1.5 text-sm shadow-lift":"absolute start-0 top-full z-20 mt-1 flex min-w-52 flex-col gap-0.5 rounded-2xl border border-border bg-surface p-1.5 text-sm shadow-lift"}>
+                  <button type="button" onClick={()=>{setActionsFor(null);setReplyTo(m);}} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-start transition-colors hover:bg-surface-2"><Reply className="size-4 shrink-0 text-muted" />{t("reply")}</button>
+                  {mine&&!deleted?(<>
+                    <button type="button" onClick={()=>{setActionsFor(null);setEditing(m);setEditBody(m.body);}} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-start transition-colors hover:bg-surface-2"><Pencil className="size-4 shrink-0 text-muted" />{t("edit")}</button>
+                    <button type="button" onClick={()=>{setActionsFor(null);setInfoFor(m);}} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-start transition-colors hover:bg-surface-2"><Info className="size-4 shrink-0 text-muted" />{t("messageInfo")}</button>
+                    <span className="mx-2 my-0.5 h-px bg-border" aria-hidden="true" />
+                    <button type="button" onClick={()=>{setMenuFor(m.id);}} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-start text-danger transition-colors hover:bg-red-500/10"><Trash2 className="size-4 shrink-0" />{t("delete")}</button>
+                  </>):null}
+                </span>):null}
               </span>
               {failed?(<p className="mt-0.5 text-end text-[0.7rem] font-medium text-danger">{t("errors.send_failed")}</p>):null}
               {pending&&!failed?(<p className="mt-0.5 text-end text-[0.7rem] text-muted">{t("sending")}…</p>):null}
