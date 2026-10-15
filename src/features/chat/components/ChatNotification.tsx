@@ -8,21 +8,29 @@ type Toast = { id: string; senderName: string; preview: string; conversationId: 
 export function ChatNotification({ meId, activeConversationId }: { meId: string; activeConversationId?: string | null }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   useEffect(() => {
-    const supabase = createClient();
+    if (!meId) return;
+    const supabase = createClient() as unknown as any;
+    let alive = true;
     const ch = supabase.channel(`notify:${meId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `recipient_id=eq.${meId}` }, async (payload) => {
-        const row = payload.new as { id: string; type: string; conversation_id: string | null; message_id: string | null; actor_id: string | null };
-        if (row.type !== "chat_message" || !row.conversation_id) return;
-        if (row.conversation_id === activeConversationId) return;
-        const [{ data: msg }, { data: prof }] = await Promise.all([
-          supabase.from("messages").select("body").eq("id", row.message_id ?? "").maybeSingle(),
-          row.actor_id ? supabase.from("profiles").select("full_name,avatar_path").eq("id", row.actor_id).maybeSingle() : Promise.resolve({ data: null }),
-        ]);
-        const t: Toast = { id: row.id, senderName: (prof as { full_name?: string } | null)?.full_name ?? "Oustians", preview: ((msg as { body?: string } | null)?.body ?? "").slice(0, 80), conversationId: row.conversation_id, avatar: null };
-        setToasts((p) => (p.some((x) => x.id === t.id) ? p : [...p.slice(-2), t]));
-        window.setTimeout(() => setToasts((p) => p.filter((x) => x.id !== t.id)), 6000);
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `recipient_id=eq.${meId}` }, async (payload: any) => {
+        try {
+          const row = payload.new as { id: string; type: string; conversation_id: string | null; message_id: string | null; actor_id: string | null };
+          if (!row || row.type !== "chat_message" || !row.conversation_id || !row.message_id) return;
+          if (row.conversation_id === activeConversationId) return;
+          if (!alive) return;
+          const [{ data: msg }, { data: prof }] = await Promise.all([
+            supabase.from("messages").select("body").eq("id", row.message_id ?? "").maybeSingle(),
+            row.actor_id ? supabase.from("profiles").select("full_name,avatar_path").eq("id", row.actor_id).maybeSingle() : Promise.resolve({ data: null }),
+          ]);
+          if (!alive) return;
+          const body = ((msg as { body?: string } | null)?.body ?? "").slice(0, 80);
+          if (!body) return;
+          const t: Toast = { id: row.id, senderName: (prof as { full_name?: string } | null)?.full_name ?? "Oustians", preview: body, conversationId: row.conversation_id, avatar: null };
+          setToasts((p) => (p.some((x) => x.id === t.id) ? p : [...p.slice(-2), t]));
+          window.setTimeout(() => { if (alive) setToasts((p) => p.filter((x) => x.id !== t.id)); }, 6000);
+        } catch { /* toast is best-effort */ }
       }).subscribe();
-    return () => { void supabase.removeChannel(ch); };
+    return () => { alive = false; void supabase.removeChannel(ch); };
   }, [meId, activeConversationId]);
   if (toasts.length === 0) return null;
   return (

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oustians - Comprehensive Technical Audit Report v1.0</title>
+<style>
+:root{--brand:#14495c;--brand2:#0d3444;--gold:#c2a05b;--goldsoft:#f7f2e6;--bg:#f1f3f5;--card:#fff;--text:#11242b;--muted:#5b6a72;--border:#e1e5e8;--danger:#cf3b30;--ok:#1e7e46;--warn:#9a6b1a}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.65}
+.cover{background:linear-gradient(135deg,#0d3444 0%,#14495c 60%,#1d6076 100%);color:#fff;padding:64px 48px;position:relative;overflow:hidden}
+.cover .kicker{letter-spacing:3px;text-transform:uppercase;color:var(--gold);font-size:13px;font-weight:700}
+.cover h1{font-size:40px;margin:12px 0 8px;max-width:660px;line-height:1.15}
+.cover p.sub{font-size:17px;opacity:.92;max-width:660px}
+.cover .meta{margin-top:28px;display:flex;gap:12px;flex-wrap:wrap}
+.cover .meta span{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);padding:6px 14px;border-radius:999px;font-size:13px}
+.wrap{max-width:980px;margin:-32px auto 64px;background:var(--card);border-radius:16px;box-shadow:0 12px 40px rgba(17,36,43,.14);padding:48px 52px}
+.toc{background:var(--goldsoft);border:1px solid #e8dcc0;border-radius:12px;padding:24px 28px}
+.toc h2{margin-top:0;color:var(--brand)}.toc ol{columns:2;column-gap:32px;margin:0;padding-left:20px}.toc li{margin:4px 0;font-size:14px}.toc a{color:var(--brand);text-decoration:none}
+h2.sec{color:var(--brand);border-bottom:3px solid var(--gold);padding-bottom:8px;margin-top:52px;font-size:25px}
+h3{color:var(--brand2);margin-top:30px}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px}
+th{background:var(--brand);color:#fff;text-align:left;padding:9px 11px}td{border:1px solid var(--border);padding:8px 11px;vertical-align:top}tr:nth-child(even) td{background:#f7fafb}
+code{background:#eef3f4;padding:2px 6px;border-radius:6px;font-size:12.5px;color:var(--brand2)}
+pre{background:#0f2a33;color:#d7e9ee;padding:16px;border-radius:10px;overflow-x:auto;font-size:12.5px;line-height:1.5}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.ok{background:#e2f3e8;color:var(--ok)}.warn{background:#fbf0d7;color:var(--warn)}.bad{background:#fdecea;color:var(--danger)}.info{background:#e8f1f4;color:var(--brand)}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:20px 0}
+.kpi div{background:var(--brand);color:#fff;border-radius:12px;padding:14px;text-align:center}
+.kpi b{font-size:25px;display:block}.kpi small{opacity:.85}
+.callout{border-left:5px solid var(--gold);background:var(--goldsoft);padding:14px 18px;border-radius:0 10px 10px 0;margin:18px 0}
+.danger-callout{border-left:5px solid var(--danger);background:#fdecea;padding:14px 18px;border-radius:0 10px 10px 0;margin:18px 0}
+.footer{margin-top:52px;padding-top:20px;border-top:2px solid var(--border);color:var(--muted);font-size:13px}
+@media print{.wrap{box-shadow:none;margin:0;max-width:none}h2.sec{page-break-before:always}table,pre{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="kicker">Obour University for Science and Technology - OUST</div>
+<h1>Oustians - Comprehensive Technical Audit and Codebase Documentation</h1>
+<p class="sub">Engineering-grade report for senior engineers, architects, due-diligence reviewers, and future maintainers. Evidence-based. No invented facts.</p>
+<div class="meta"><span>Version 1.0 - 2026-10-15</span><span>Commit 7604ce4 (main)</span><span>Typecheck - Lint - 70/70 tests: PASS</span></div>
+</div>
+<div class="wrap">
+<div class="toc"><h2>Contents</h2><ol>
+<li><a href="#s1">Audit scope and methodology</a></li><li><a href="#s2">System overview</a></li>
+<li><a href="#s3">Technology stack</a></li><li><a href="#s4">Architecture</a></li>
+<li><a href="#s5">Features</a></li><li><a href="#s6">Database</a></li>
+<li><a href="#s7">API reference</a></li><li><a href="#s8">Security audit</a></li>
+<li><a href="#s9">Quality, testing and performance</a></li><li><a href="#s10">Deployment and operations</a></li><li><a href="#s11">Debt, risks and roadmap</a></li><li><a href="#s12">Evidence index and glossary</a></li>
+</ol></div>
+<h2 class="sec" id="s1">1 - Audit scope and methodology</h2>
+<div class="kpi"><div><b>16</b><small>migrations inspected</small></div><div><b>28</b><small>tables mapped</small></div><div><b>~62</b><small>RLS policies</small></div><div><b>~40</b><small>DB functions</small></div><div><b>70/70</b><small>unit tests pass</small></div></div>
+<p><b>Method:</b> systematic static inspection UI to Server Actions to Postgres RPCs to Storage, plus executed <code>npm run typecheck</code>, <code>npm run lint</code>, <code>npm test</code> (all green, 2026-10-15, Node 24.21.0). <b>Evidence classes:</b> <span class="badge ok">VERIFIED</span> inspected + tested, <span class="badge info">IMPLEMENTED</span> code exists / behavior not live-tested, <span class="badge warn">PARTIAL</span> gaps, <span class="badge warn">PLANNED</span> documented only, <span class="badge bad">NOT FOUND</span>. <b>Limits:</b> live Supabase project, Vercel dashboards, DNS/TLS, prod data were never accessed (UNVERIFIED). No e2e/build-against-live, no advisory scan. No secrets in this report.</p>
+<h2 class="sec" id="s2">2 - System overview</h2>
+<p><b>Oustians</b> is the private, bilingual (Arabic RTL + English LTR), mobile-first campus social app for OUST students - invite-code gated, admin-approved, installable. <b>Stack:</b> Next.js 16 App Router + strict TypeScript + Tailwind v4 + next-intl, backed entirely by Supabase (Auth, Postgres + RLS, Storage, Realtime), hosted on Vercel region <code>dub1</code> as <code>oustians.com</code> (live UNVERIFIED).</p>
+<pre>Student browser (en/ar, light/dark) --&gt; Vercel dub1 (SSR + Server Actions) --&gt; Supabase (Auth - Postgres RLS - Storage - Realtime)
+                                    \--&gt; Storage CDN (avatars / post-media / story-media)</pre>
+<p><b>Routes</b> (<code>src/app/[locale]/</code>): public <code>(auth)</code> login/signup/pending versus member shell <code>(app)</code> - feed, stories, groups, connections, chat, events, notifications, search, settings, profile, admin. Every mutation: zod validation -&gt; <code>requireApprovedMember()</code> (or <code>requireAdmin()</code>) -&gt; Postgres RPC / RLS-guarded query. Media: ticket -&gt; direct-to-storage upload -&gt; commit. Chat: browser-subscribed Realtime, no socket server. <b>Absent from code:</b> queues, cron, search engine, analytics, payments, push/email.</p>
+<h2 class="sec" id="s3">3 - Technology stack (installed, VERIFIED)</h2>
+<table><tr><th>Layer</th><th>Choice (version)</th><th>Evidence</th></tr>
+<tr><td>Language</td><td>TypeScript strict (ES2017, bundler resolution, @/* path), tsc 5.9.3</td><td><code>tsconfig.json</code>, <code>package.json</code></td></tr>
+<tr><td>UI / routing</td><td>Next.js 16.3.6, React 19.2.8, Tailwind v4.3.3 (CSS-first tokens, <code>globals.css</code> 276 lines)</td><td><code>src/app/**</code>, <code>next.config.ts</code></td></tr>
+<tr><td>i18n / theme</td><td>next-intl 4.14.6 (en/ar, RTL, OUSTIANS_LOCALE cookie to profiles.language); next-themes 0.4.6; Jakarta + Plex Arabic fonts</td><td><code>src/i18n/*</code>, <code>src/messages/*.json</code> (534 lines each)</td></tr>
+<tr><td>Backend</td><td>Supabase: supabase-js 2.117.1 + ssr 0.12.7; Auth + Postgres RLS + Storage + Realtime; zod 4.6.5 validation; Postgres rate limiter</td><td><code>supabase/migrations/*.sql</code>, <code>src/lib/supabase/*</code></td></tr>
+<tr><td>Tooling</td><td>ESLint-next (green), Prettier+tailwind (config), node --test 70/70 (green), Supabase CLI 2.117.0 (linked project)</td><td><code>package.json</code> scripts; run 2026-10-15</td></tr>
+<tr><td>Infra</td><td>Vercel region dub1 (<code>vercel.json</code>); domain oustians.com per README (UNVERIFIED live)</td><td><code>vercel.json</code>, README</td></tr>
+<tr><td>NOT FOUND</td><td>CI/CD (.github absent), Docker/IaC, cron/queue, search engine, analytics, monitoring, payments, OAuth/MFA</td><td>repo-wide search</td></tr></table>
+<div class="callout"><b>Direct dependencies (installed):</b> next 16.3.6, react + react-dom 19.2.8, @supabase/ssr 0.12.7, @supabase/supabase-js 2.117.1, clsx, lucide-react 1.47.0, next-intl 4.14.6, next-themes 0.4.6, tailwind-merge, zod 4.6.5. Dev: tailwindcss 4.3.3, typescript 5.9.3, eslint + eslint-config-next, prettier, supabase CLI. Cline CONFIRMED by developer brief (no repo config); model/MCP UNKNOWN / NOT FOUND.</div>
+<h2 class="sec" id="s4">4 - Architecture</h2>
+<h3>Request pipeline</h3>
+<pre>Browser --&gt; proxy.ts (locale + session refresh, skipped w/o cookie/env)
+  --&gt; Guard (requireApprovedMember: profiles status+role lookup)
+  --&gt; Server Action (zod) --&gt; consume_rate_limit (auth paths) --&gt; RPC / RLS query
+  --&gt; revalidate / router.refresh() (RSC staleTimes.dynamic 30s)</pre>
+<h3>Media upload and delivery</h3>
+<pre>Browser -&gt; ticket action (auth + zod + byte-sniff for posts/stories) -&gt; signed path
+  -&gt; direct PUT to avatars / post-media / story-media -&gt; commit RPC -&gt; next/image GET (30-day cache)</pre>
+<div class="danger-callout"><b>Known gap (SEC-001):</b> the avatar ticket path has NO server byte-sniff (posts/stories do). Fix: reuse the media sniff in the avatar action.</div>
+<h3>Auth sequence</h3>
+<pre>signup (invite code via is_invite_code_valid, pending profile) -&gt; /pending (refresher polls)
+  -&gt; admin approval-queue -&gt; member shell unlocked. OAuth / MFA / custom recovery UI: NOT FOUND.</pre>
+<h3>Decisions and trade-offs</h3>
+<table><tr><th>Decision</th><th>Benefit</th><th>Cost / risk</th></tr>
+<tr><td>Supabase-everything, no custom server</td><td>Fast campus build, Postgres-enforced rules</td><td>RLS + RPC correctness IS the security boundary</td></tr>
+<tr><td>Direct-to-storage uploads</td><td>No Vercel bandwidth, fast media</td><td>Ticket/sniff logic must be airtight (SEC-001/002)</td></tr>
+<tr><td>Read-time story expiry, no cron</td><td>Zero ops</td><td>Tombstones accumulate; every query must filter (TD-002)</td></tr>
+<tr><td>RSC 30s stale + refresh</td><td>Instant-feeling nav</td><td>Slightly stale admin queues (accepted)</td></tr>
+<tr><td>CSP deferred to M8</td><td>Shipped faster</td><td>Baseline headers only until then (TD-004)</td></tr></table>
+<h2 class="sec" id="s5">5 - Features (IMPLEMENTED unless noted; live behavior UNVERIFIED)</h2>
+<table><tr><th>Feature</th><th>Status</th><th>Key code</th><th>DB</th><th>Gaps</th></tr>
+<tr><td>Accounts / profiles</td><td><span class="badge info">IMPLEMENTED</span></td><td>(auth) login/signup/pending; profile/[username]; profile/edit + avatar-uploader; session.ts guards</td><td>profiles, invite_codes(_uses)</td><td>OAuth/MFA/recovery UI NOT FOUND; avatar sniff SEC-001</td></tr>
+<tr><td>Feed / photo posts</td><td><span class="badge info">IMPLEMENTED</span></td><td>(app)/page.tsx; post-card.tsx (607 lines); FeedComposer; create/post-composer</td><td>posts, post_media</td><td>video-post UI UNVERIFIED; feed perf plan missing</td></tr>
+<tr><td>Reactions (fire/insight/same/talk) + threaded comments</td><td><span class="badge info">IMPLEMENTED</span></td><td>reaction-bar/button/users-sheet; react_to_post/comment RPCs</td><td>post_reactions, comment_reactions, post_comments</td><td>load-race dedup UNVERIFIED; e2e script never run vs live</td></tr>
+<tr><td>Stories (photo + video, 24h)</td><td><span class="badge warn">PARTIAL</span></td><td>story-tray/viewer (462 lines)/composer (487 lines); create/view/delete_story</td><td>stories, story_media, story_views</td><td>NO purge cron; cleanup = read filters only (TD-002)</td></tr>
+<tr><td>Presentation Groups</td><td><span class="badge info">IMPLEMENTED</span></td><td>groups/ pages + member/invite components; capacity.ts (unit-tested)</td><td>3 group tables</td><td>concurrent-cap load test missing</td></tr>
+<tr><td>Roles / verified badges</td><td><span class="badge info">IMPLEMENTED</span></td><td>role-badge.tsx; admin role-badge-manager; set_user_role_verification + audit log</td><td>5 university tables</td><td>revocation UX UNVERIFIED</td></tr>
+<tr><td>Connections + suggestions; chat-on-accept</td><td><span class="badge info">IMPLEMENTED</span></td><td>connect-button, sheets; suggested-members.ts (tested); thread.tsx Realtime</td><td>connections; conversations/members/messages</td><td>ranking = recency/university only; block PARTIAL</td></tr>
+<tr><td>Events + RSVP; notifications; search; i18n shell; admin; settings</td><td><span class="badge info">IMPLEMENTED</span> / search <span class="badge warn">PARTIAL</span></td><td>events/ + rsvp-button; notifications/ page; search/ (ilike); messages en+ar 534 lines; admin/ queue+invites+badges</td><td>events(+rsvps); notifications; profiles</td><td>push/email/prefs, post search, FTS, reports NOT FOUND</td></tr></table>
+<h2 class="sec" id="s6">6 - Database (Supabase Postgres; server version UNVERIFIED)</h2>
+<p>Access via <code>supabase-js</code> query builder (no ORM); types generated (<code>database.types.ts</code>, via <code>npm run db:types</code>). <b>28 tables:</b> profiles (citext username UNIQUE, account_status enum, is_admin; <code>protect_profile_columns()</code> blocks client privilege writes) - invite_codes(_uses) - universities/subjects/roles/user_roles/audit_logs - posts/post_media - post_likes (legacy)/post_reactions/comment_reactions/post_comments(+replies, ensure_comment_parent) - connections (set_connection; accept auto-opens chat) - conversations/members/messages (start/ensure/list_conversation_previews) - events/rsvps - notifications (maintain_reaction_notification recompute) - stories/story_media/story_views (expires_at; can_view_story[_object]; purge callable, NO schedule) - presentation_groups/members/invitations (cap-enforced RPCs) - rate_limits (consume_rate_limit, RATE_LIMIT_SALT).</p>
+<pre>profiles ||--o{ posts : authors          posts ||--o{ post_media / reactions / comments
+profiles ||--o{ connections : requests   conversations ||--o{ messages : contains
+profiles ||--o{ stories : publishes      stories ||--o{ story_media : contains
+profiles ||--o{ presentation_groups : owns   profiles ||--o{ notifications : receives</pre>
+<p><b>RLS (~62 policies):</b> per-operation on all user tables; approved-members-see-approved-content; owners manage own rows; admins via is_admin()/is_approved_member(). <b>Storage:</b> buckets <code>avatars</code>, <code>post-media</code>, <code>story-media</code> - owner-write, member-read, story objects extra-gated (owner-read repair 29000200). <b>Integrity:</b> uniqueness + cascades VERIFIED (orphan risk LOW). <b>Missing:</b> FTS index (search = ilike full scan), purge cron, down-migrations. Migration <code>29000000</code> statement-split was repaired (9e41e55) - re-verify before <code>db push</code>.</p>
+<h2 class="sec" id="s7">7 - API reference (no REST; Server Actions + Postgres RPCs)</h2>
+<p>Convention: zod -&gt; guard -&gt; RPC/RLS query; localized errors, never leaked secrets; auth paths rate-limited. Auth: signupWithInvite / login / signOut / avatar ticket / guards. Feed: createPost -&gt; create_post(), deletePost, toggleLike (legacy) / setPostReaction -&gt; react_to_post(), comments. Stories: create/view/delete_story (sniffed). Groups: create/invite/respond/leave RPCs. Connections/chat/events/notifications/roles/admin/media as inventoried. <b>External contracts: none.</b> Idempotency: toggles + unique constraints idempotent; post/story creates NOT (retry = duplicate). Concurrency guards in RPCs IMPLEMENTED, load test NOT FOUND.</p>
+<h2 class="sec" id="s8">8 - Security audit (source-based)</h2>
+<div class="callout"><b>Threat model:</b> anonymous internet, pending users, approved members (IDOR/BOLA, spam), rogue admin. Assets: identities, DMs, private profiles, media. Boundary: Supabase RLS + RPCs + storage policies. <b>Verified controls:</b> JWT + SSR refresh, member/admin guards, ~62 RLS policies + privilege-column trigger, storage gates, zod everywhere, DB rate limiter (auth paths), post/story byte-sniff, baseline headers (CSP deferred to M8).</div>
+<table><tr><th>ID</th><th>Severity</th><th>Issue</th><th>Fix</th></tr>
+<tr><td>SEC-001</td><td><span class="badge bad">Medium</span></td><td>Avatar upload lacks server byte-sniff (auth/avatar-actions.ts:29-69)</td><td>Reuse media sniff in ticket action (P0, TD-001)</td></tr>
+<tr><td>SEC-002</td><td><span class="badge bad">Medium</span></td><td>Storage reads may outlive story expiry for direct-URL holders</td><td>Align TTL/purge; verify can_view_story_object on all paths</td></tr>
+<tr><td>SEC-003</td><td><span class="badge bad">Medium</span></td><td>No authenticated write-path rate limits (spam reactions/comments/DMs)</td><td>Extend consume_rate_limit to write actions (TD-006)</td></tr>
+<tr><td>SEC-004</td><td><span class="badge warn">Low</span></td><td>No CSP yet (next.config.ts:39-51)</td><td>Add M8 CSP incl. Storage host (TD-004)</td></tr>
+<tr><td>SEC-005</td><td><span class="badge warn">Low</span></td><td>Service-role key needed by scripts/create-admin-user.mjs, promote-admin.mjs</td><td>Server-only, rotate, never log</td></tr>
+<tr><td>SEC-006</td><td><span class="badge info">Info</span></td><td>No CI/SAST/dependabot; vuln posture UNVERIFIED</td><td>Add pipeline + npm audit review (TD-003)</td></tr>
+<tr><td>SEC-007</td><td><span class="badge info">Info</span></td><td>E2E script (tests/reactions.e2e.mjs) never run - needs live project</td><td>Run vs preview with seed before launch</td></tr></table>
+<p>No hardcoded secrets (<code>.env.local</code> git-ignored; example names only). No <code>dangerouslySetInnerHTML</code>. No app-built SQL strings (builder + RPC params). CSRF covered by Server Actions + SameSite cookies. No open redirects found. No dedicated security tests (gap).</p>
+<h2 class="sec" id="s9">9 - Quality, testing and performance</h2>
+<table><tr><th>Check (2026-10-15)</th><th>Result</th></tr>
+<tr><td>npm run typecheck (tsc --noEmit)</td><td><span class="badge ok">PASS</span> zero errors</td></tr>
+<tr><td>npm run lint (eslint)</td><td><span class="badge ok">PASS</span> zero warnings</td></tr>
+<tr><td>npm test (node --test, 7 files)</td><td><span class="badge ok">PASS</span> 70 tests / 18 suites (192ms)</td></tr>
+<tr><td>npm run test:e2e / build / vuln+load scans</td><td><span class="badge warn">NOT RUN</span> (need live project / env / tooling)</td></tr></table>
+<p><b>Covered:</b> reactions, media image/video, stories queries, group capacity, roles queries, suggestions. <b>Untested:</b> auth/guards, feed queries, chat, events, notifications, RLS/storage policies (TD-005). <b>Debts:</b> oversized post-card (607), story-viewer (462), story-composer (487), stories/queries (465); ilike search unindexed; no telemetry; stale README milestones. <b>Perf:</b> cursor pagination present; N+1 risk in rings/cards; 30-day image cache good; no benchmarks - measure feed p95, story-tray queries, search latency, upload success before launch claims.</p>
+<h2 class="sec" id="s10">10 - Deployment and operations</h2>
+<p><b>Local:</b> <code>npm install</code> -&gt; copy <code>.env.example</code> to <code>.env.local</code> (NEXT_PUBLIC_SITE_URL, SUPABASE_URL, PUBLISHABLE_KEY; optional RATE_LIMIT_SALT; SERVICE_ROLE only for scripts) -&gt; <code>supabase link + db push</code> (verify 29000000 fix) -&gt; <code>npm run dev</code> to /en or /ar. Boots without env (clear errors on Supabase paths). <b>Release today:</b> push main -&gt; Vercel build (UNVERIFIED live) + manual db push. <b>Missing / unverified:</b> CI/CD, rollback/down-migrations, secrets rotation proof, logs/monitoring/alerts, backup/restore proof (confirm PITR + drill - TD-010), domain/TLS, email templates. No Dockerfile/IaC.</p>
+<h2 class="sec" id="s11">11 - Debt, risks and roadmap</h2>
+<table><tr><th>ID</th><th>Finding</th><th>Priority</th><th>Effort*</th><th>Done when</th></tr>
+<tr><td>TD-001</td><td>Avatar byte-sniff (SEC-001)</td><td><span class="badge bad">P0</span></td><td>S</td><td>Polyglot rejected; suite green</td></tr>
+<tr><td>TD-002</td><td>Story purge schedule</td><td><span class="badge bad">P0</span></td><td>S-M</td><td>Nightly purge; reads still filtered</td></tr>
+<tr><td>TD-003</td><td>CI (typecheck+lint+test) / SAST / audit</td><td><span class="badge bad">P0</span></td><td>S</td><td>Workflow green on PR</td></tr>
+<tr><td>TD-010</td><td>Backup/restore proof</td><td><span class="badge bad">P0</span></td><td>S</td><td>Staging restore drill passes</td></tr>
+<tr><td>TD-004</td><td>CSP header</td><td><span class="badge warn">P1</span></td><td>S</td><td>Header asserted in preview</td></tr>
+<tr><td>TD-006</td><td>Write-path rate limits</td><td><span class="badge warn">P1</span></td><td>S-M</td><td>Burst test 429s correctly</td></tr>
+<tr><td>TD-009</td><td>Observability (errors/logs/alerts)</td><td><span class="badge warn">P1</span></td><td>S-M</td><td>Error sink + alert drill</td></tr>
+<tr><td>TD-005</td><td>Missing suites (auth/chat/events/notif/RLS)</td><td><span class="badge warn">P1</span></td><td>M</td><td>New suites + e2e vs preview</td></tr>
+<tr><td>TD-007</td><td>Search FTS + post/event search</td><td><span class="badge warn">P1</span></td><td>M</td><td>Index + latency measured</td></tr>
+<tr><td>TD-012</td><td>Rollback / down-migrations</td><td><span class="badge warn">P1</span></td><td>S</td><td>Down scripts or snapshot SOP</td></tr>
+<tr><td>TD-008</td><td>Split oversized modules</td><td><span class="badge info">P2</span></td><td>M</td><td>No behavior change, tests green</td></tr>
+<tr><td>TD-011</td><td>Refresh README milestones</td><td><span class="badge info">P2</span></td><td>S</td><td>Docs match git log</td></tr></table>
+<p>*S &lt;1d, M 1-3d (single dev). <b>Order:</b> P0 hardening -&gt; abuse/visibility -&gt; scale (purge, FTS) -&gt; quality. <b>Strengths to keep:</b> coherent Supabase-native design, strict types, RLS-first, tested reaction/story/group cores.</p>
+<h2 class="sec" id="s12">12 - Evidence index and glossary</h2>
+<p><b>Inspected:</b> package.json/lockfile, tsconfig, next.config.ts, vercel.json, eslint/prettier configs, .env.example, README, docs/cto-defense.md, src/proxy.ts, all locale routes + components + i18n/messages, lib/supabase + lib/*, all 12 feature slices (actions/queries/validation/components + 7 unit test files), all 16 migrations, scripts/*.mjs, tests/reactions.e2e.mjs, git state (7604ce4, main, origin). <b>Not accessed:</b> live Supabase/Vercel/DNS/prod data. Companion markdown detail: <code>docs/technical-audit/*.md</code> (12 files; this HTML is the combined branded edition).</p>
+<p><b>Glossary:</b> RLS = Row Level Security (Postgres per-row access rules). RSC = React Server Components. RPC = Postgres function called via Supabase. Ticket-upload = signed-path direct browser upload then DB commit. Ring/tray = story author cluster UI. Invite-gate = signup requires valid invite code. PITR = point-in-time recovery.</p>
+<div class="footer">Oustians Technical Audit v1.0 - 2026-10-15 - commit 7604ce4 (main). Static inspection + typecheck/lint/unit tests executed; live systems not accessed. No secrets contained. Companion detail: docs/technical-audit/*.md.</div>
+</div>
+</body>
+</html>

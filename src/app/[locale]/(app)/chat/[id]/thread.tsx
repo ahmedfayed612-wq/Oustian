@@ -12,7 +12,6 @@ import type { Receipt, Reaction } from "@/features/chat/types";
 import { MessageStatus, type MsgState } from "@/features/chat/components/MessageStatus";
 import { ReactionPicker } from "@/features/chat/components/ReactionPicker";
 import { MessageInfo } from "@/features/chat/components/MessageInfo";
-import { ChatNotification } from "@/features/chat/components/ChatNotification";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 export type ThreadProps = { conversationId: string; meId: string; initialMessages: ThreadMessage[]; peerName: string; peerUsername: string; peerAvatarUrl: string | null; streak?: number };
@@ -26,7 +25,7 @@ function msgState(m: LocalMsg, meId: string, receipts: Receipt[]): MsgState {
   return "sent";
 }
 export function Thread({ conversationId, meId, initialMessages, peerName, peerUsername, peerAvatarUrl, streak }: ThreadProps) {
-  const t = useTranslations("Chat"); const tAuth = useTranslations("Auth.errors"); const format = useFormatter();
+  const t = useTranslations("Chat"); const format = useFormatter();
   const [messages, setMessages] = useState<LocalMsg[]>(initialMessages as LocalMsg[]);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [reactions, setReactions] = useState<Reaction[]>([]);
@@ -35,38 +34,58 @@ export function Thread({ conversationId, meId, initialMessages, peerName, peerUs
   const [menuFor, setMenuFor] = useState<string|null>(null); const [pickerFor, setPickerFor] = useState<string|null>(null); const [infoFor, setInfoFor] = useState<LocalMsg|null>(null);
   const [hasNew, setHasNew] = useState(false); const [stuck, setStuck] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null); const scrollRef = useRef<HTMLDivElement>(null); const atBottom = useRef(true);
-  const upsert = useCallback((row: LocalMsg) => setMessages((p) => { const i = p.findIndex((m) => m.id === row.id); if (i>=0) { const n=[...p]; n[i]={...n[i],...row}; return n; } return [...p,row].sort((a,b)=>+new Date(a.created_at)-+new Date(b.created_at)); }),[]);
+  const upsert = useCallback((row: LocalMsg) => setMessages((p) => { const i = p.findIndex((m) => m.id === row.id); if (i>=0) { const n=[...p]; n[i]={...n[i],...row}; return n; } const n=[...p,row].sort((a,b)=>+new Date(a.created_at)-+new Date(b.created_at)); return n.length > 300 ? n.slice(n.length - 300) : n; }),[]);
+  const knownIds = useRef<Set<string>>(new Set(initialMessages.map((m) => m.id)));
+  const rememberIds = useCallback((rows: LocalMsg[]) => { for (const r of rows) { knownIds.current.add(r.id); if (knownIds.current.size > 400) { const first = knownIds.current.values().next(); if (!first.done) knownIds.current.delete(first.value); } } }, []);
   const markRead = useCallback(async () => { try { const s = createClient() as unknown as any; await s.from("conversation_members").update({ last_read_at: new Date().toISOString() }).eq("conversation_id", conversationId).eq("user_id", meId); await s.from("message_receipts").upsert(messages.filter((m: any)=>m.sender_id!==meId && !m._pending).map((m: any)=>({ message_id: m.id, user_id: meId, seen_at: new Date().toISOString() })), { onConflict: "message_id,user_id" }); } catch {} }, [conversationId, meId, messages]);
   useEffect(() => {
     const supabase = createClient() as unknown as any; let alive = true;
     (async () => {
-      const since = messages.length ? messages[messages.length-1].created_at : new Date(0).toISOString();
-      const [{ data: missed }, { data: rc }, { data: rx }] = await Promise.all([
-        supabase.from("messages").select("*").eq("conversation_id", conversationId).gt("created_at", since).order("created_at").limit(100),
-        supabase.from("message_receipts").select("*").in("message_id", (messages.map((m: any)=>m.id).slice(-100))).limit(500),
-        supabase.from("message_reactions").select("*").in("message_id", (messages.map((m: any)=>m.id).slice(-100))).limit(500),
-      ]);
-      if (!alive) return;
-      (missed ?? []).forEach((r: any) => upsert(r as LocalMsg));
-      if (rc) setReceipts((p)=>{ const ids=new Set(p.map((x: Receipt)=>x.message_id+x.user_id)); return [...p, ...(rc as Receipt[]).filter((x: Receipt)=>!ids.has(x.message_id+x.user_id))]; });
-      if (rx) setReactions((p)=>{ const ids=new Set(p.map((x: Reaction)=>x.message_id+x.user_id)); return [...p, ...(rx as Reaction[]).filter((x: Reaction)=>!ids.has(x.message_id+x.user_id))]; });
-      const incom = (missed ?? []).filter((m: any) => (m as {sender_id:string}).sender_id !== meId);
+      try {
+        const since = messages.length ? messages[messages.length-1].created_at : new Date(0).toISOString();
+        const ids = messages.map((m: any)=>m.id).slice(-100).filter((id: string) => id && !String(id).startsWith("pending-"));
+        const [missedRes, rcRes, rxRes] = await Promise.all([
+          supabase.from("messages").select("*").eq("conversation_id", conversationId).gt("created_at", since).order("created_at").limit(100),
+          ids.length ? supabase.from("message_receipts").select("*").in("message_id", ids).limit(500) : Promise.resolve({ data: [] }),
+          ids.length ? supabase.from("message_reactions").select("*").in("message_id", ids).limit(500) : Promise.resolve({ data: [] }),
+        ]);
+        if (!alive) return;
+        const missed = (missedRes.data ?? []) as LocalMsg[];
+        const fresh = missed.filter((r) => !knownIds.current.has(r.id));
+        if (fresh.length) { rememberIds(fresh); fresh.forEach((r) => upsert(r)); }
+        const rc = rcRes.data as Receipt[] | null; const rx = rxRes.data as Reaction[] | null;
+        if (rc) setReceipts((p)=>{ const ids2=new Set(p.map((x: Receipt)=>x.message_id+x.user_id)); const add=(rc as Receipt[]).filter((x: Receipt)=>!ids2.has(x.message_id+x.user_id)); return add.length ? [...p, ...add].slice(-500) : p; });
+        if (rx) setReactions((p)=>{ const ids2=new Set(p.map((x: Reaction)=>x.message_id+x.user_id)); const add=(rx as Reaction[]).filter((x: Reaction)=>!ids2.has(x.message_id+x.user_id)); return add.length ? [...p, ...add].slice(-500) : p; });
+      const incom = fresh.filter((m: any) => (m as {sender_id:string}).sender_id !== meId);
       if (incom.length) {
-        await supabase.from("message_receipts").upsert(incom.map((m: any)=>({ message_id: (m as {id:string}).id, user_id: meId, delivered_at: new Date().toISOString() })), { onConflict: "message_id,user_id" });
-        void markRead();
+        try {
+          await supabase.from("message_receipts").upsert(incom.map((m: any)=>({ message_id: (m as {id:string}).id, user_id: meId, delivered_at: new Date().toISOString() })), { onConflict: "message_id,user_id" });
+          void markRead();
+        } catch {}
       }
+      } catch {}
     })();
     const ch = supabase.channel(`messages:${conversationId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` }, (pl: any) => {
-        const row = pl.new as LocalMsg; upsert(row);
+        const row = pl.new as LocalMsg;
+        if (knownIds.current.has(row.id)) { upsert(row); return; }
+        rememberIds([row]); upsert(row);
+        // Coalesce our own echo: drop the optimistic pending bubble if it matches.
+        if (row.sender_id === meId) {
+          setMessages((p) => {
+            const pend = p.find((m: any) => m._pending && m.sender_id === meId && (m as {body:string}).body === row.body);
+            if (!pend) return p;
+            return p.filter((m: any) => m.id !== (pend as {id:string}).id);
+          });
+        }
         if (row.sender_id !== meId) { void supabase.from("message_receipts").upsert({ message_id: row.id, user_id: meId, delivered_at: new Date().toISOString() }, { onConflict: "message_id,user_id" }); void markRead(); if (!atBottom.current) setHasNew(true); }
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` }, (pl: any) => upsert(pl.new as LocalMsg))
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` }, (pl: any) => { const o = pl.old as {id:string}; setMessages((p)=>p.filter((m: any)=>m.id!==o.id)); })
-      .on("postgres_changes", { event: "*", schema: "public", table: "message_receipts" }, (pl: any) => { const r = (pl.new ?? pl.old) as Receipt; if (!r?.message_id) return; setReceipts((p)=>{ const i=p.findIndex((x)=>x.message_id===r.message_id&&x.user_id===r.user_id); if(i>=0){const n=[...p];n[i]={...n[i],...r};return n;} return [...p,r]; }); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "message_receipts", filter: `user_id=eq.${meId}` }, (pl: any) => { const r = (pl.new ?? pl.old) as Receipt; if (!r?.message_id) return; setReceipts((p)=>{ const i=p.findIndex((x)=>x.message_id===r.message_id&&x.user_id===r.user_id); if(i>=0){const n=[...p];n[i]={...n[i],...r};return n;} return [...p,r].slice(-500); }); })
       .on("postgres_changes", { event: "*", schema: "public", table: "message_reactions" }, (pl: any) => {
         if (pl.eventType === "DELETE") { const o = pl.old as Reaction; setReactions((p)=>p.filter((x)=>!(x.message_id===o.message_id&&x.user_id===o.user_id))); }
-        else { const r = pl.new as Reaction; setReactions((p)=>{ const i=p.findIndex((x)=>x.message_id===r.message_id&&x.user_id===r.user_id); if(i>=0){const n=[...p];n[i]=r;return n;} return [...p,r]; }); }
+        else { const r = pl.new as Reaction; if (!r?.message_id || !knownIds.current.has(r.message_id)) return; setReactions((p)=>{ const i=p.findIndex((x)=>x.message_id===r.message_id&&x.user_id===r.user_id); if(i>=0){const n=[...p];n[i]=r;return n;} return [...p,r].slice(-500); }); }
       }).subscribe((st: any) => setStuck(st === "CLOSED" || st === "CHANNEL_ERROR"));
     const onVis = () => { if (document.visibilityState === "visible") void markRead(); };
     document.addEventListener("visibilitychange", onVis);
@@ -114,7 +133,6 @@ export function Thread({ conversationId, meId, initialMessages, peerName, peerUs
   const visible = messages.filter((m: any)=>!((m as {deleted_for?:string[]}).deleted_for ?? []).includes(meId));
   return (
     <Card className="flex h-[calc(100dvh-10rem)] min-h-80 flex-col overflow-hidden p-0">
-      <ChatNotification meId={meId} activeConversationId={conversationId} />
       <h1 className="sr-only">{t("threadLabel")}</h1>
       <div className="flex items-center gap-3 border-b border-border px-4 py-2.5">
         <Link href="/chat" aria-label={t("backToMessages")} className="-ms-1 flex size-11 shrink-0 items-center justify-center rounded-pill text-muted hover:bg-surface-2 hover:text-brand"><ArrowLeft className="size-5 rtl:-scale-x-100" aria-hidden="true" /></Link>
