@@ -397,7 +397,35 @@
       "send_failed": "تعذّر إرسال الرسالة — حاول مرة أخرى",
       "start_failed": "تعذّر فتح المحادثة — حاول مرة أخرى",
       "invalid_conversation": "لا يمكنك مراسلة هذا العضو"
-    }
+    },
+    "reply": "رد",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "deleteEveryone": "حذف للجميع",
+    "deleteMe": "حذف لدي فقط",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "edited": "معدّلة",
+    "deletedMessage": "تم حذف هذه الرسالة",
+    "deletedPreview": "رسالة محذوفة",
+    "retry": "إعادة المحاولة",
+    "failed": "فشل — اضغط لإعادة المحاولة",
+    "messageInfo": "معلومات الرسالة",
+    "delivered": "تم التوصيل",
+    "seen": "تمت المشاهدة",
+    "sent": "تم الإرسال",
+    "sendingDot": "جارٍ الإرسال",
+    "react": "تفاعل",
+    "newMessages": "رسائل جديدة",
+    "replyToUnknown": "الرسالة الأصلية",
+    "tapToView": "اضغط لعرض الأصلية",
+    "replyingTo": "رد على",
+    "reactionsTitle": "التفاعلات",
+    "noReactions": "لا تفاعلات بعد",
+    "streakDays": "سلسلة {count} أيام",
+    "streakAtRisk": "ابعت رسالة للحفاظ عليها",
+    "notificationsChat": "{name}: {preview}",
+    "openChat": "فتح المحادثة"
   },
   "Post": {
     "comment": "تعليق",
@@ -462,7 +490,8 @@
     "groupInviteDeclined": "{name} رفض دعوة مجموعتك",
     "groupMemberRemoved": "{name} أزالك من مجموعة عرض تقديمي",
     "groupOwnershipTransferred": "{name} جعلك مالك مجموعة عرض تقديمي",
-    "someone": "شخص ما"
+    "someone": "شخص ما",
+    "notificationsChat": "{name}: {preview}"
   },
   "Groups": {
     "title": "مجموعات العرض التقديمي",

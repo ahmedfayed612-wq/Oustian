@@ -148,6 +148,8 @@ export default async function NotificationsPage() {
                     return t("groupMemberRemoved", { name: actorName });
                   case "group_ownership_transferred":
                     return t("groupOwnershipTransferred", { name: actorName });
+                  case "chat_message":
+                    return t("notificationsChat" as never, { name: actorName, preview: (snippet ?? "") } as never);
                   default:
                     return t("liked", { name: actorName });
                 }
@@ -156,8 +158,11 @@ export default async function NotificationsPage() {
               // Connection requests land on the requester's profile;
               // group events lead to the presentation-groups screen;
               // everything else still leads back to the feed.
+              const chatConv = (row as { conversation_id?: string | null }).conversation_id;
               const href =
-                row.type === "connection_request" && actor?.username
+                row.type === "chat_message" && chatConv
+                  ? `/chat/${chatConv}`
+                  : row.type === "connection_request" && actor?.username
                   ? `/profile/${actor.username}`
                   : row.type.startsWith("group_")
                     ? "/groups"

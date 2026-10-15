@@ -6,6 +6,7 @@ import { getUnreadNotificationCount } from "@/features/notifications/queries";
 import { headlineForMember } from "@/lib/profile-options";
 import { createClient } from "@/lib/supabase/server";
 import { signedStorageUrl } from "@/lib/supabase/storage";
+import { GlobalChatListener } from "@/features/chat/components/GlobalChatListener";
 
 /**
  * The signed-in app.
@@ -29,6 +30,7 @@ export default async function AppLayout({
   const locale = await getLocale();
   const supabase = await createClient();
 
+  try { await (supabase as unknown as never as { rpc: (n: string) => Promise<unknown> }).rpc("record_app_visit"); } catch { /* visits table may not exist yet */ }
   const [avatarUrl, unreadNotifications] = await Promise.all([
     signedStorageUrl(supabase, profile.avatar_path),
     getUnreadNotificationCount(),
@@ -48,6 +50,7 @@ export default async function AppLayout({
 
   return (
     <AppShell member={member} unreadNotifications={unreadNotifications}>
+      <GlobalChatListener meId={profile.id} />
       {children}
     </AppShell>
   );

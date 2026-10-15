@@ -28,6 +28,8 @@ export default async function ConversationPage({
   if (!thread.isMember) notFound();
 
   await markConversationReadAction(id);
+  const { data: streakRow } = await supabase.from("conversation_streaks" as never).select("current_streak").eq("conversation_id" as never, id).maybeSingle();
+  const streak = ((streakRow as { current_streak?: number } | null)?.current_streak ?? 0) as number;
 
   const avatarUrl = thread.peer
     ? await signedStorageUrl(supabase, thread.peer.avatarPath)
@@ -41,6 +43,7 @@ export default async function ConversationPage({
       peerName={thread.peer?.fullName ?? ""}
       peerUsername={thread.peer?.username ?? ""}
       peerAvatarUrl={avatarUrl}
+      streak={streak}
     />
   );
 }

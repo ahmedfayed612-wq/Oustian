@@ -1,0 +1,25 @@
+-- Chat v2 part 2: notify trigger + streaks + realtime
+ create or replace function public.handle_chat_message_notify() returns trigger language plpgsql security definer set search_path = public, pg_temp as $$ begin insert into public.notifications (recipient_id, actor_id, type, conversation_id, message_id) select cm.user_id, new.sender_id, 'chat_message', new.conversation_id, new.id from public.conversation_members cm where cm.conversation_id = new.conversation_id and cm.user_id <> new.sender_id; return new; end; $$;
+ drop trigger if exists messages_after_insert_notify on public.messages;
+ create trigger messages_after_insert_notify after insert on public.messages for each row execute function public.handle_chat_message_notify();
+ create table if not exists public.conversation_streaks (conversation_id uuid primary key references public.conversations(id) on delete cascade, current_streak int not null default 0, last_active_date date, longest_streak int not null default 0, updated_at timestamptz not null default now());
+ create table if not exists public.conversation_streak_days (conversation_id uuid not null references public.conversations(id) on delete cascade, active_date date not null, primary key (conversation_id, active_date));
+ create table if not exists public.app_visits (user_id uuid not null references public.profiles(id) on delete cascade, visit_date date not null, created_at timestamptz not null default now(), primary key (user_id, visit_date));
+ create table if not exists public.app_streaks (user_id uuid primary key references public.profiles(id) on delete cascade, current_streak int not null default 0, last_visit_date date, longest_streak int not null default 0, updated_at timestamptz not null default now());
+ alter table public.conversation_streaks enable row level security;
+ alter table public.conversation_streak_days enable row level security;
+ alter table public.app_visits enable row level security;
+ alter table public.app_streaks enable row level security;
+ drop policy if exists conv_streak_select on public.conversation_streaks;
+ create policy conv_streak_select on public.conversation_streaks for select to authenticated using (public.is_conversation_member(conversation_id));
+ drop policy if exists conv_streak_days_select on public.conversation_streak_days;
+ create policy conv_streak_days_select on public.conversation_streak_days for select to authenticated using (public.is_conversation_member(conversation_id));
+ drop policy if exists app_visits_own on public.app_visits;
+ create policy app_visits_own on public.app_visits for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+ drop policy if exists app_streaks_own on public.app_streaks;
+ create policy app_streaks_own on public.app_streaks for select to authenticated using (user_id = auth.uid());
+ revoke all on public.conversation_streaks, public.conversation_streak_days, public.app_visits, public.app_streaks from anon, authenticated;
+ grant select on public.conversation_streaks to authenticated;
+ grant select on public.conversation_streak_days to authenticated;
+ grant select, insert on public.app_visits to authenticated;
+ grant select on public.app_streaks to authenticated;

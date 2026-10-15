@@ -1,4 +1,4 @@
-import { CalendarDays, GraduationCap, LogOut, PenLine, UserRound } from "lucide-react";
+import { CalendarDays, Flame, GraduationCap, LogOut, PenLine, UserRound } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button, buttonClasses } from "@/components/ui/Button";
@@ -41,6 +41,8 @@ export default async function ProfilePage() {
   const supabase = await createClient();
   const posts = await listAuthorPosts(supabase, profile.id, profile.id);
 
+  const { data: appStreakRow } = await (supabase as unknown as { from: (t: string) => { select: (c: string) => { eq: (a: string, b: string) => { maybeSingle: () => Promise<{ data: { current_streak?: number } | null }> } } } }).from("app_streaks").select("current_streak").eq("user_id", profile.id).maybeSingle();
+  const appStreak = (appStreakRow?.current_streak ?? 0);
   const [connectionCount, requests, verifiedRolesByUser] = await Promise.all([
     listConnectionCount(supabase, profile.id),
     listIncomingRequests(supabase, profile.id),
@@ -163,6 +165,9 @@ export default async function ProfilePage() {
         </div>
       </Card>
 
+      {appStreak >= 2 ? (
+        <Card className="flex items-center gap-2 p-4"><Flame className="size-5 text-orange-500" aria-hidden="true" /><span className="text-sm font-bold">{appStreak}-day streak</span></Card>
+      ) : null}
       {requests.length > 0 ? (
         <Card className="p-4">
           <h2 className="text-[0.9375rem] font-semibold text-text">

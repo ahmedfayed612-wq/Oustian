@@ -397,7 +397,35 @@
       "send_failed": "Couldn't send your message — please try again",
       "start_failed": "Couldn't open the conversation — please try again",
       "invalid_conversation": "You can't message this member"
-    }
+    },
+    "reply": "Reply",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteEveryone": "Delete for everyone",
+    "deleteMe": "Delete for me",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edited": "Edited",
+    "deletedMessage": "This message was deleted",
+    "deletedPreview": "Message deleted",
+    "retry": "Retry",
+    "failed": "Failed — tap to retry",
+    "messageInfo": "Message info",
+    "delivered": "Delivered",
+    "seen": "Seen",
+    "sent": "Sent",
+    "sendingDot": "Sending",
+    "react": "React",
+    "newMessages": "New messages",
+    "replyToUnknown": "Original message",
+    "tapToView": "Tap to view original",
+    "replyingTo": "Replying to",
+    "reactionsTitle": "Reactions",
+    "noReactions": "No reactions yet",
+    "streakDays": "{count}-day streak",
+    "streakAtRisk": "Send a message to keep it alive",
+    "notificationsChat": "{name}: {preview}",
+    "openChat": "Open chat"
   },
   "Post": {
     "comment": "Comment",
@@ -462,7 +490,8 @@
     "groupInviteDeclined": "{name} declined your group invitation",
     "groupMemberRemoved": "{name} removed you from a presentation group",
     "groupOwnershipTransferred": "{name} made you the owner of a presentation group",
-    "someone": "Someone"
+    "someone": "Someone",
+    "notificationsChat": "{name}: {preview}"
   },
   "Groups": {
     "title": "Presentation groups",
