@@ -1,11 +1,11 @@
 "use client";
-import { Check, CheckCheck, Clock, AlertTriangle } from "lucide-react";
+import { Check, Star, Clock, AlertTriangle } from "lucide-react";
 
 export type MsgState = "sending" | "sent" | "delivered" | "seen" | "failed";
 
 /**
- * WhatsApp-style delivery ticks for own messages.
- * single tick = sent, double tick = delivered, blue double tick = seen.
+ * Delivery states for own messages: sent = tick, delivered = hollow star,
+ * seen = gold star (the original design). Clock while sending, alert on fail.
  */
 export function MessageStatus({ state, tone }: { state: MsgState; tone: "mine" | "theirs" }) {
   if (tone !== "mine") return null;
@@ -14,8 +14,8 @@ export function MessageStatus({ state, tone }: { state: MsgState; tone: "mine" |
   if (state === "failed")
     return <AlertTriangle className="size-3 shrink-0 text-red-300" aria-label="failed" />;
   if (state === "seen")
-    return <CheckCheck className="size-4 shrink-0 text-sky-300" strokeWidth={2.2} aria-label="seen" />;
+    return <Star className="size-3.5 shrink-0 fill-amber-400 stroke-amber-400" strokeWidth={1.8} aria-label="seen" />;
   if (state === "delivered")
-    return <CheckCheck className="size-4 shrink-0 opacity-70" strokeWidth={2} aria-label="delivered" />;
+    return <Star className="size-3.5 shrink-0 stroke-current opacity-70" strokeWidth={1.8} aria-label="delivered" />;
   return <Check className="size-3.5 shrink-0 opacity-60" strokeWidth={2} aria-label="sent" />;
 }

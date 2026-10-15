@@ -2,7 +2,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
-import { ArrowLeft, Send, Reply, Pencil, Trash2, Smile, Info, X, Flame, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, Send, Reply, Pencil, Trash2, Smile, Info, X, Flame } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -31,13 +31,17 @@ export function Thread({ conversationId, meId, initialMessages, peerName, peerUs
   const [reactions, setReactions] = useState<Reaction[]>([]);
   const [body, setBody] = useState(""); const [errorKey, setErrorKey] = useState<string|null>(null); const [sending, setSending] = useState(false);
   const [replyTo, setReplyTo] = useState<LocalMsg|null>(null); const [editing, setEditing] = useState<LocalMsg|null>(null); const [editBody, setEditBody] = useState("");
-  const [menuFor, setMenuFor] = useState<string|null>(null); const [pickerFor, setPickerFor] = useState<string|null>(null); const [infoFor, setInfoFor] = useState<LocalMsg|null>(null); const [actionsFor, setActionsFor] = useState<string|null>(null);
+  const [menuFor, setMenuFor] = useState<string|null>(null); const [pickerFor, setPickerFor] = useState<string|null>(null); const [infoFor, setInfoFor] = useState<LocalMsg|null>(null);
   const [hasNew, setHasNew] = useState(false); const [stuck, setStuck] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null); const scrollRef = useRef<HTMLDivElement>(null); const atBottom = useRef(true);
   const upsert = useCallback((row: LocalMsg) => setMessages((p) => { const i = p.findIndex((m) => m.id === row.id); if (i>=0) { const n=[...p]; n[i]={...n[i],...row}; return n; } const n=[...p,row].sort((a,b)=>+new Date(a.created_at)-+new Date(b.created_at)); return n.length > 300 ? n.slice(n.length - 300) : n; }),[]);
   const knownIds = useRef<Set<string>>(new Set(initialMessages.map((m) => m.id)));
   const rememberIds = useCallback((rows: LocalMsg[]) => { for (const r of rows) { knownIds.current.add(r.id); if (knownIds.current.size > 400) { const first = knownIds.current.values().next(); if (!first.done) knownIds.current.delete(first.value); } } }, []);
-  const markRead = useCallback(async () => { try { const s = createClient() as unknown as any; await s.from("conversation_members").update({ last_read_at: new Date().toISOString() }).eq("conversation_id", conversationId).eq("user_id", meId); await s.from("message_receipts").upsert(messages.filter((m: any)=>m.sender_id!==meId && !m._pending).map((m: any)=>({ message_id: m.id, user_id: meId, seen_at: new Date().toISOString() })), { onConflict: "message_id,user_id" }); } catch {} }, [conversationId, meId, messages]);
+  const markRead = useCallback(async () => { try { const s = createClient() as unknown as any; await s.from("conversation_members").update({ last_read_at: new Date().toISOString() }).eq("conversation_id", conversationId).eq("user_id", meId); const seenSet = new Set(receipts.filter((r) => r.user_id === meId && r.seen_at).map((r) => r.message_id)); const unseen = messages.filter((m: any)=>m.sender_id!==meId && !m._pending && !String(m.id).startsWith("pending-") && !seenSet.has(m.id)); if (unseen.length) await s.from("message_receipts").upsert(unseen.map((m: any)=>({ message_id: m.id, user_id: meId, seen_at: new Date().toISOString() })), { onConflict: "message_id,user_id" }); } catch {} }, [conversationId, meId, messages, receipts]);
+  // Live handlers must call the LATEST markRead — a mount-time closure would
+  // keep upserting the initial snapshot and never mark newer messages seen.
+  const markReadRef = useRef(markRead);
+  useEffect(() => { markReadRef.current = markRead; });
   useEffect(() => {
     const supabase = createClient() as unknown as any; let alive = true;
     (async () => {
@@ -56,13 +60,19 @@ export function Thread({ conversationId, meId, initialMessages, peerName, peerUs
         const rc = rcRes.data as Receipt[] | null; const rx = rxRes.data as Reaction[] | null;
         if (rc) setReceipts((p)=>{ const ids2=new Set(p.map((x: Receipt)=>x.message_id+x.user_id)); const add=(rc as Receipt[]).filter((x: Receipt)=>!ids2.has(x.message_id+x.user_id)); return add.length ? [...p, ...add].slice(-500) : p; });
         if (rx) setReactions((p)=>{ const ids2=new Set(p.map((x: Reaction)=>x.message_id+x.user_id)); const add=(rx as Reaction[]).filter((x: Reaction)=>!ids2.has(x.message_id+x.user_id)); return add.length ? [...p, ...add].slice(-500) : p; });
-      const incom = fresh.filter((m: any) => (m as {sender_id:string}).sender_id !== meId);
-      if (incom.length) {
+      // On OPEN: deliver everything incoming and mark it seen. `fresh` only
+      // holds messages newer than the last one we already have — empty on a
+      // fresh visit — so without this block receipts never write and the peer
+      // never sees "seen".
+      const incoming = messages.filter((m: any) => m.sender_id !== meId && !m._pending && !String(m.id).startsWith("pending-") && knownIds.current.has(m.id));
+      const deliveredSet = new Set((rc ?? []).filter((r: Receipt) => r.user_id === meId && r.delivered_at).map((r: Receipt) => r.message_id));
+      const toDeliver = incoming.filter((m: any) => !deliveredSet.has((m as {id:string}).id));
+      if (toDeliver.length) {
         try {
-          await supabase.from("message_receipts").upsert(incom.map((m: any)=>({ message_id: (m as {id:string}).id, user_id: meId, delivered_at: new Date().toISOString() })), { onConflict: "message_id,user_id" });
-          void markRead();
+          await supabase.from("message_receipts").upsert(toDeliver.map((m: any)=>({ message_id: (m as {id:string}).id, user_id: meId, delivered_at: new Date().toISOString() })), { onConflict: "message_id,user_id" });
         } catch {}
       }
+      void markReadRef.current();
       } catch {}
     })();
     const ch = supabase.channel(`messages:${conversationId}`)
@@ -78,32 +88,32 @@ export function Thread({ conversationId, meId, initialMessages, peerName, peerUs
             return p.filter((m: any) => m.id !== (pend as {id:string}).id);
           });
         }
-        if (row.sender_id !== meId) { void supabase.from("message_receipts").upsert({ message_id: row.id, user_id: meId, delivered_at: new Date().toISOString() }, { onConflict: "message_id,user_id" }); void markRead(); if (!atBottom.current) setHasNew(true); }
+        if (row.sender_id !== meId) { void supabase.from("message_receipts").upsert({ message_id: row.id, user_id: meId, delivered_at: new Date().toISOString() }, { onConflict: "message_id,user_id" }); void markReadRef.current(); if (!atBottom.current) setHasNew(true); }
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` }, (pl: any) => upsert(pl.new as LocalMsg))
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` }, (pl: any) => { const o = pl.old as {id:string}; setMessages((p)=>p.filter((m: any)=>m.id!==o.id)); })
-      .on("postgres_changes", { event: "*", schema: "public", table: "message_receipts", filter: `user_id=eq.${meId}` }, (pl: any) => { const r = (pl.new ?? pl.old) as Receipt; if (!r?.message_id) return; setReceipts((p)=>{ const i=p.findIndex((x)=>x.message_id===r.message_id&&x.user_id===r.user_id); if(i>=0){const n=[...p];n[i]={...n[i],...r};return n;} return [...p,r].slice(-500); }); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "message_receipts" }, (pl: any) => { const r = (pl.new ?? pl.old) as Receipt; if (!r?.message_id || !knownIds.current.has(r.message_id)) return; setReceipts((p)=>{ const i=p.findIndex((x)=>x.message_id===r.message_id&&x.user_id===r.user_id); if(i>=0){const n=[...p];n[i]={...n[i],...r};return n;} return [...p,r].slice(-500); }); })
       .on("postgres_changes", { event: "*", schema: "public", table: "message_reactions" }, (pl: any) => {
         if (pl.eventType === "DELETE") { const o = pl.old as Reaction; setReactions((p)=>p.filter((x)=>!(x.message_id===o.message_id&&x.user_id===o.user_id))); }
         else { const r = pl.new as Reaction; if (!r?.message_id || !knownIds.current.has(r.message_id)) return; setReactions((p)=>{ const i=p.findIndex((x)=>x.message_id===r.message_id&&x.user_id===r.user_id); if(i>=0){const n=[...p];n[i]=r;return n;} return [...p,r].slice(-500); }); }
       }).subscribe((st: any) => setStuck(st === "CLOSED" || st === "CHANNEL_ERROR"));
-    const onVis = () => { if (document.visibilityState === "visible") void markRead(); };
+    const onVis = () => { if (document.visibilityState === "visible") void markReadRef.current(); };
     document.addEventListener("visibilitychange", onVis);
     return () => { alive = false; document.removeEventListener("visibilitychange", onVis); void supabase.removeChannel(ch); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, meId]);
   useEffect(() => { if (atBottom.current) bottomRef.current?.scrollIntoView({ block: "end" }); }, [messages.length]);
   useEffect(() => {
-    if (!actionsFor && !menuFor) return;
+    if (!menuFor) return;
     const onDown = (e: PointerEvent) => {
       const el = (e.target as HTMLElement).closest("[data-msg-menu]");
-      if (!el) { setActionsFor(null); setMenuFor(null); }
+      if (!el) setMenuFor(null);
     };
-    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === "Escape") { setActionsFor(null); setMenuFor(null); setPickerFor(null); } };
+    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === "Escape") { setMenuFor(null); setPickerFor(null); } };
     document.addEventListener("pointerdown", onDown);
     document.addEventListener("keydown", onKey);
     return () => { document.removeEventListener("pointerdown", onDown); document.removeEventListener("keydown", onKey); };
-  }, [actionsFor, menuFor]);
+  }, [menuFor]);
   const onScroll = () => { const el = scrollRef.current; if (!el) return; const near = el.scrollHeight - el.scrollTop - el.clientHeight < 80; atBottom.current = near; if (near) setHasNew(false); };
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); const trimmed = body.trim(); if (!trimmed || sending) return;
@@ -149,7 +159,7 @@ export function Thread({ conversationId, meId, initialMessages, peerName, peerUs
         <Link href="/chat" aria-label={t("backToMessages")} className="-ms-1 flex size-11 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-brand"><ArrowLeft className="size-5 rtl:-scale-x-100" aria-hidden="true" /></Link>
         <Avatar size="sm" name={peerName||undefined} src={peerAvatarUrl} />
         <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{peerName||t("unknownPeer")}</p>{peerUsername?<p className="truncate text-xs text-muted" dir="ltr">@{peerUsername}</p>:null}</div>
-        {typeof streak === "number" && streak >= 2 ? (<span title={t("streakDays",{count:streak})} className="flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-bold text-orange-600 dark:bg-orange-500/15 dark:text-orange-400"><Flame className="size-3.5" aria-hidden="true" />{streak}</span>) : null}
+        {typeof streak === "number" && streak >= 1 ? (<span title={t("streakDays",{count:streak})} className="flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-bold text-orange-600 dark:bg-orange-500/15 dark:text-orange-400"><Flame className="size-3.5" aria-hidden="true" />{streak}</span>) : null}
       </div>
       {stuck ? (<p className="bg-amber-100 px-4 py-1 text-center text-xs text-amber-800">reconnecting…</p>) : null}
       <div ref={scrollRef} onScroll={onScroll} className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-surface-2/40 px-3 py-3 sm:px-4">
@@ -169,22 +179,18 @@ export function Thread({ conversationId, meId, initialMessages, peerName, peerUs
                 <span className={mine?"mt-1 flex items-center justify-end gap-1 text-[0.65rem] font-medium text-on-brand/80":"mt-1 flex items-center justify-end gap-1 text-[0.65rem] font-medium text-muted"}><time dateTime={m.created_at}>{format.dateTime(new Date(m.created_at),{hour:"numeric",minute:"2-digit"})}</time>{(m as {is_edited?:boolean}).is_edited?<span>· {t("edited")}</span>:null}{mine?<MessageStatus state={msgState(m,meId,receipts)} tone="mine" />:null}</span>
                 {counts.size>0?<span className="-mb-1 mt-1.5 flex flex-wrap gap-1">{[...counts.entries()].map(([e,c])=>(<button key={e} type="button" onClick={()=>setPickerFor(m.id)} className={mine?"flex items-center gap-0.5 rounded-full bg-black/20 px-2 py-0.5 text-xs leading-none":"flex items-center gap-0.5 rounded-full border border-border/70 bg-surface-2 px-2 py-0.5 text-xs leading-none shadow-sm"}>{e} <span className="font-semibold">{c}</span></button>))}</span>:null}
               </div>
-              <span className={mine?"mt-0.5 flex justify-end":"mt-0.5 flex justify-start"} data-msg-menu>
-                <button type="button" aria-label={t("react")} aria-expanded={pickerFor===m.id} onClick={()=>{setActionsFor(null);setMenuFor(null);setPickerFor(pickerFor===m.id?null:m.id);}} className={pickerFor===m.id?"rounded-full bg-surface-2 p-2 text-brand shadow-sm":"rounded-full p-2 text-muted transition-colors hover:bg-surface-2 hover:text-text"}><Smile className="size-4" /></button>
-                <button type="button" aria-label={t("moreActions") ?? "More"} aria-expanded={actionsFor===m.id} onClick={()=>{setPickerFor(null);setMenuFor(null);setActionsFor(actionsFor===m.id?null:m.id);}} className={actionsFor===m.id?"rounded-full bg-surface-2 p-2 text-text shadow-sm":"rounded-full p-2 text-muted transition-colors hover:bg-surface-2 hover:text-text"}><MoreHorizontal className="size-4" /></button>
-                {actionsFor===m.id?(<span className={mine?"absolute end-0 top-full z-20 mt-1 flex min-w-52 flex-col gap-0.5 rounded-2xl border border-border bg-surface p-1.5 text-sm shadow-lift":"absolute start-0 top-full z-20 mt-1 flex min-w-52 flex-col gap-0.5 rounded-2xl border border-border bg-surface p-1.5 text-sm shadow-lift"}>
-                  <button type="button" onClick={()=>{setActionsFor(null);setReplyTo(m);}} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-start transition-colors hover:bg-surface-2"><Reply className="size-4 shrink-0 text-muted" />{t("reply")}</button>
-                  {mine&&!deleted?(<>
-                    <button type="button" onClick={()=>{setActionsFor(null);setEditing(m);setEditBody(m.body);}} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-start transition-colors hover:bg-surface-2"><Pencil className="size-4 shrink-0 text-muted" />{t("edit")}</button>
-                    <button type="button" onClick={()=>{setActionsFor(null);setInfoFor(m);}} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-start transition-colors hover:bg-surface-2"><Info className="size-4 shrink-0 text-muted" />{t("messageInfo")}</button>
-                    <span className="mx-2 my-0.5 h-px bg-border" aria-hidden="true" />
-                    <button type="button" onClick={()=>{setMenuFor(m.id);}} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-start text-danger transition-colors hover:bg-red-500/10"><Trash2 className="size-4 shrink-0" />{t("delete")}</button>
-                  </>):null}
-                </span>):null}
+              <span className="mt-0.5 flex gap-0.5 text-muted" data-msg-menu>
+                <button type="button" aria-label={t("reply")} onClick={()=>{setMenuFor(null);setPickerFor(null);setReplyTo(m);}} className="rounded-full p-1.5 transition-colors hover:bg-surface-2 hover:text-text"><Reply className="size-4" /></button>
+                <button type="button" aria-label={t("react")} aria-expanded={pickerFor===m.id} onClick={()=>{setMenuFor(null);setPickerFor(pickerFor===m.id?null:m.id);}} className={pickerFor===m.id?"rounded-full bg-surface-2 p-1.5 text-brand shadow-sm":"rounded-full p-1.5 transition-colors hover:bg-surface-2 hover:text-text"}><Smile className="size-4" /></button>
+                {mine&&!deleted?(<>
+                  <button type="button" aria-label={t("edit")} onClick={()=>{setMenuFor(null);setPickerFor(null);setEditing(m);setEditBody(m.body);}} className="rounded-full p-1.5 transition-colors hover:bg-surface-2 hover:text-text"><Pencil className="size-4" /></button>
+                  <button type="button" aria-label={t("messageInfo")} onClick={()=>{setMenuFor(null);setPickerFor(null);setInfoFor(m);}} className="rounded-full p-1.5 transition-colors hover:bg-surface-2 hover:text-text"><Info className="size-4" /></button>
+                  <button type="button" aria-label={t("delete")} aria-expanded={menuFor===m.id} onClick={()=>{setPickerFor(null);setMenuFor(menuFor===m.id?null:m.id);}} className={menuFor===m.id?"rounded-full bg-surface-2 p-1.5 text-danger shadow-sm":"rounded-full p-1.5 transition-colors hover:bg-red-500/10 hover:text-danger"}><Trash2 className="size-4" /></button>
+                </>):null}
               </span>
               {failed?(<p className="mt-0.5 text-end text-[0.7rem] font-medium text-danger">{t("errors.send_failed")}</p>):null}
               {pending&&!failed?(<p className="mt-0.5 text-end text-[0.7rem] text-muted">{t("sending")}…</p>):null}
-              {menuFor===m.id?(<span className={mine?"absolute end-0 top-full z-20 mt-1 flex min-w-40 flex-col gap-0.5 rounded-xl border border-border bg-surface p-1 text-xs shadow-lift":"absolute start-0 top-full z-20 mt-1 flex min-w-40 flex-col gap-0.5 rounded-xl border border-border bg-surface p-1 text-xs shadow-lift"}><button type="button" onClick={()=>void del(true)} className="rounded-lg px-3 py-2 text-start transition-colors hover:bg-surface-2">{t("deleteEveryone")}</button><button type="button" onClick={()=>void del(false)} className="rounded-lg px-3 py-2 text-start transition-colors hover:bg-surface-2">{t("deleteMe")}</button></span>):null}
+              {menuFor===m.id?(<span data-msg-menu className={mine?"absolute end-0 top-full z-20 mt-1 flex min-w-40 flex-col gap-0.5 rounded-xl border border-border bg-surface p-1 text-xs shadow-lift":"absolute start-0 top-full z-20 mt-1 flex min-w-40 flex-col gap-0.5 rounded-xl border border-border bg-surface p-1 text-xs shadow-lift"}><button type="button" onClick={()=>void del(true)} className="rounded-lg px-3 py-2 text-start transition-colors hover:bg-surface-2">{t("deleteEveryone")}</button><button type="button" onClick={()=>void del(false)} className="rounded-lg px-3 py-2 text-start transition-colors hover:bg-surface-2">{t("deleteMe")}</button></span>):null}
             </div>
           </li>);})}
         </ul>
