@@ -72,10 +72,13 @@ export async function loadThread(
   supabase: SupabaseClient<Database>,
   conversationId: string,
   viewerId: string,
+  { limit = 50 }: { limit?: number } = {},
 ): Promise<{
   messages: ThreadMessage[];
   peer: ThreadPeer | null;
   isMember: boolean;
+  /** created_at of the oldest message on this page, for older-page cursors. */
+  oldestCreatedAt: string | null;
 }> {
   const { data: members, error: membersError } = await supabase
     .from("conversation_members")
@@ -84,24 +87,26 @@ export async function loadThread(
 
   if (membersError) {
     console.error("[chat] membership read failed", membersError.message);
-    return { messages: [], peer: null, isMember: false };
+    return { messages: [], peer: null, isMember: false, oldestCreatedAt: null };
   }
 
   const isMember = (members ?? []).some((row) => row.user_id === viewerId);
 
-  if (!isMember) return { messages: [], peer: null, isMember: false };
+  if (!isMember) return { messages: [], peer: null, isMember: false, oldestCreatedAt: null };
 
   const peerId = (members ?? []).find(
     (row) => row.user_id !== viewerId,
   )?.user_id;
 
+  // Newest-first so the tail of the page is the oldest message we show; the
+  // client uses its created_at/id as the "older" cursor for scroll-up loads.
   const [messagesResult, peerResult] = await Promise.all([
     supabase
       .from("messages")
       .select("*")
       .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: true })
-      .limit(200),
+      .order("created_at", { ascending: false })
+      .limit(limit + 1), // +1 to detect whether an older page exists
     peerId
       ? supabase
           .from("profiles")
@@ -115,16 +120,58 @@ export async function loadThread(
     console.error("[chat] messages read failed", messagesResult.error.message);
   }
 
+  const rows = messagesResult.data ?? [];
+  const hasOlder = rows.length > limit;
+  const page = hasOlder ? rows.slice(1) : rows;
+  // page is newest-first; reverse so the UI renders oldest-first.
+  page.reverse();
+
+  const peer = peerId
+    ? {
+        id: peerId,
+        username: peerResult.data?.username ?? "",
+        fullName: peerResult.data?.full_name ?? "",
+        avatarPath: peerResult.data?.avatar_path ?? null,
+      }
+    : null;
+
   return {
-    messages: messagesResult.data ?? [],
+    messages: page,
     isMember: true,
-    peer: peerId
-      ? {
-          id: peerId,
-          username: peerResult.data?.username ?? "",
-          fullName: peerResult.data?.full_name ?? "",
-          avatarPath: peerResult.data?.avatar_path ?? null,
-        }
-      : null,
+    peer,
+    oldestCreatedAt: page.length ? page[0].created_at : null,
   };
+}
+
+/**
+ * Loads an older page of messages before the given cursor, used when the user
+ * scrolls up through history. The cursor is the `created_at` of the oldest
+ * message currently shown; ties are broken by `id` so pagination never skips
+ * or duplicates a message sharing the same timestamp.
+ *
+ * Returns rows oldest-first (reversed from the query's newest-first order) so
+ * callers can prepend them to the existing message list.
+ */
+export async function listMessagesBefore(
+  supabase: SupabaseClient<Database>,
+  conversationId: string,
+  { cursor, limit = 50 }: { cursor: string; limit?: number },
+): Promise<ThreadMessage[]> {
+  const { data, error } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .lt("created_at", cursor)
+    .limit(limit + 1);
+
+  if (error) {
+    console.error("[chat] listMessagesBefore failed", error.message);
+    return [];
+  }
+
+  const rows = data ?? [];
+  rows.reverse(); // oldest-first for prepending
+  return rows;
 }

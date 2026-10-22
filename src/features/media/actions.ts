@@ -25,6 +25,61 @@ export type MediaUploadTicket =
 export type MediaUploadPurpose = "post" | "story";
 
 /**
+ * Signed upload tickets for one post photo: the processed full-resolution
+ * WebP and its WebP thumbnail. Both objects land in the private `post-media`
+ * bucket under the caller's own `<user_id>/<uuid>.webp` folder, so the client
+ * can never choose where its bytes live. The composer uploads full + thumbnail
+ * in parallel and only commits to the database once both objects are stored.
+ */
+export type PostMediaTickets =
+  | {
+      ok: true;
+      full: { path: string; token: string; bucket: string };
+      thumb: { path: string; token: string; bucket: string };
+    }
+  | { ok: false; code: string };
+
+export async function createPostMediaTicketsAction(): Promise<PostMediaTickets> {
+  const viewer = await requireApprovedMember();
+
+  const fullPath = buildMediaKey(viewer.id, "image/webp");
+  const thumbPath = buildMediaKey(viewer.id, "image/webp");
+
+  if (!fullPath || !thumbPath) {
+    return { ok: false, code: "photo_wrong_type" };
+  }
+
+  const bucket = POST_MEDIA_BUCKET;
+  const supabase = await createClient();
+
+  const [fullResult, thumbResult] = await Promise.all([
+    supabase.storage.from(bucket).createSignedUploadUrl(fullPath),
+    supabase.storage.from(bucket).createSignedUploadUrl(thumbPath),
+  ]);
+
+  if (fullResult.error || !fullResult.data) {
+    console.error(
+      "[media] could not create signed upload url for full photo",
+      fullResult.error?.message,
+    );
+    return { ok: false, code: "photo_unreadable" };
+  }
+  if (thumbResult.error || !thumbResult.data) {
+    console.error(
+      "[media] could not create signed upload url for thumbnail",
+      thumbResult.error?.message,
+    );
+    return { ok: false, code: "photo_unreadable" };
+  }
+
+  return {
+    ok: true,
+    full: { path: fullPath, token: fullResult.data.token, bucket },
+    thumb: { path: thumbPath, token: thumbResult.data.token, bucket },
+  };
+}
+
+/**
  * Mints a signed upload URL for media directly to Supabase Storage.
  * The browser uploads directly without traversing Next.js server payload
  * bounds (~4.5 MB). The key is built here from the authenticated member's id

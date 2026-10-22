@@ -30,6 +30,7 @@ export const rateLimitRules = {
   connection: { bucket: "connections:action", window: "10 minutes", max: 30 },
   reaction: { bucket: "reactions:react", window: "10 minutes", max: 120 },
   postCreate: { bucket: "feed:post", window: "10 minutes", max: 10 },
+  voiceSend: { bucket: "chat:voice", window: "10 minutes", max: 30 },
   storyCreate: { bucket: "stories:create", window: "10 minutes", max: 10 },
   storyView: { bucket: "stories:view", window: "10 minutes", max: 300 },
   eventCreate: { bucket: "events:create", window: "10 minutes", max: 10 },

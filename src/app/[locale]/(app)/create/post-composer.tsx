@@ -10,11 +10,13 @@ import { Card } from "@/components/ui/Card";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { initialActionState } from "@/features/auth/action-state";
 import { createPostAction } from "@/features/feed/actions";
-import { createMediaUploadTicketAction } from "@/features/media/actions";
+import { createPostMediaTicketsAction } from "@/features/media/actions";
+import { processImage } from "@/features/media/image-process";
 import {
   MAX_ALT_TEXT_LENGTH,
   MAX_IMAGE_BYTES,
-  MIN_IMAGE_DIMENSION,
+  OUTPUT_IMAGE_MIME,
+  POST_MEDIA_BUCKET,
 } from "@/features/media/limits";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -45,6 +47,7 @@ export function PostComposer({
 
   // Attached photo state
   const [mediaKey, setMediaKey] = useState<string | null>(null);
+  const [thumbKey, setThumbKey] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [altText, setAltText] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -68,65 +71,88 @@ export function PostComposer({
   async function handleFileSelect(file: File) {
     setClientError(null);
 
+    // Pre-processing ceiling: refuse oversized source files before any work.
     if (file.size > MAX_IMAGE_BYTES) {
       setClientError(t("photoTooLarge"));
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(file);
-    const img = new Image();
-    img.src = objectUrl;
-
-    await new Promise<void>((resolve) => {
-      img.onload = () => resolve();
-      img.onerror = () => resolve();
-    });
-
-    if (
-      img.width > 0 &&
-      img.height > 0 &&
-      (img.width < MIN_IMAGE_DIMENSION || img.height < MIN_IMAGE_DIMENSION)
-    ) {
-      URL.revokeObjectURL(objectUrl);
-      setClientError(t("photoTooSmall"));
       return;
     }
 
     setUploading(true);
 
     try {
-      const ticket = await createMediaUploadTicketAction(file.type);
+      // Client-side processing: EXIF orientation applied, EXIF/GPS stripped
+      // (canvas redraw drops metadata), longest edge capped at 2048 px, WebP
+      // at quality 0.85, plus a 480 px WebP thumbnail.
+      const processed = await processImage(file);
+      if (!processed.ok) {
+        setClientError(t("photoUnreadable"));
+        setUploading(false);
+        return;
+      }
+      const { photo } = processed;
 
-      if (!ticket.ok) {
-        if (ticket.code === "photo_wrong_type") {
+      // The processed full image is small, but re-assert the ceiling as a
+      // backstop against anything that could still exceed it.
+      if (photo.full.size > MAX_IMAGE_BYTES) {
+        setClientError(t("photoTooLarge"));
+        setUploading(false);
+        return;
+      }
+
+      // One round trip mints both signed upload URLs (full + thumbnail).
+      const tickets = await createPostMediaTicketsAction();
+
+      if (!tickets.ok) {
+        if (tickets.code === "photo_wrong_type") {
           setClientError(t("photoWrongType"));
         } else {
           setClientError(t("photoUnreadable"));
         }
-        URL.revokeObjectURL(objectUrl);
+        setUploading(false);
         return;
       }
 
       const supabase = createClient();
-      const { error: uploadError } = await supabase.storage
-        .from(ticket.bucket)
-        .uploadToSignedUrl(ticket.path, ticket.token, file, {
-          contentType: file.type,
-        });
 
-      if (uploadError) {
-        console.error("[composer] upload to signed url failed", uploadError.message);
+      // Upload full-resolution + thumbnail in parallel to their signed URLs.
+      const [fullResult, thumbResult] = await Promise.all([
+        supabase.storage
+          .from(tickets.full.bucket)
+          .uploadToSignedUrl(tickets.full.path, tickets.full.token, photo.full, {
+            contentType: OUTPUT_IMAGE_MIME,
+          }),
+        supabase.storage
+          .from(tickets.thumb.bucket)
+          .uploadToSignedUrl(tickets.thumb.path, tickets.thumb.token, photo.thumb, {
+            contentType: OUTPUT_IMAGE_MIME,
+          }),
+      ]);
+
+      const fullErr = fullResult.error;
+      const thumbErr = thumbResult.error;
+
+      if (fullErr) {
+        console.error("[composer] full upload failed", fullErr.message);
         setClientError(t("photoUnreadable"));
-        URL.revokeObjectURL(objectUrl);
+        setUploading(false);
+        return;
+      }
+      if (thumbErr) {
+        console.error("[composer] thumbnail upload failed", thumbErr.message);
+        // Best-effort cleanup of the full object so nothing is orphaned.
+        await supabase.storage.from(POST_MEDIA_BUCKET).remove([tickets.full.path]);
+        setClientError(t("photoUnreadable"));
+        setUploading(false);
         return;
       }
 
-      setPreviewUrl(objectUrl);
-      setMediaKey(ticket.path);
+      const previewObjectUrl = URL.createObjectURL(photo.full);
+      setPreviewUrl(previewObjectUrl);
+      setMediaKey(tickets.full.path);
+      setThumbKey(tickets.thumb.path);
     } catch (err) {
       console.error("[composer] photo upload error", err);
       setClientError(t("photoUnreadable"));
-      URL.revokeObjectURL(objectUrl);
     } finally {
       setUploading(false);
     }
@@ -138,6 +164,7 @@ export function PostComposer({
     }
     setPreviewUrl(null);
     setMediaKey(null);
+    setThumbKey(null);
     setAltText("");
     setClientError(null);
     if (fileInputRef.current) {
@@ -169,6 +196,7 @@ export function PostComposer({
   return (
     <form action={formAction} className="flex flex-col gap-3" noValidate>
       <input type="hidden" name="mediaKey" value={mediaKey ?? ""} />
+      <input type="hidden" name="thumbKey" value={thumbKey ?? ""} />
       <input type="hidden" name="altText" value={altText} />
 
       <Card className="flex flex-col gap-3 p-4">

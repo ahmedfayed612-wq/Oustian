@@ -10,6 +10,8 @@ import {
 import { requireApprovedMember } from "@/features/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { uuidPattern } from "./queries";
+import { MAX_VOICE_DURATION_MS, MAX_VOICE_BYTES, isVoiceMime } from "./voice-constants";
+import type { Json } from "@/lib/supabase/database.types";
 
 export type ChatActionResult = {
   status: "success" | "error";
@@ -91,4 +93,125 @@ export async function markConversationReadAction(
   if (error) {
     console.error("[chat] mark read failed", error.message);
   }
+}
+
+/**
+ * Sends a voice message. The browser has already uploaded the audio bytes
+ * straight to the private `voice` Storage bucket (browser -> Storage, matching
+ * the avatar pattern), so this action only writes the metadata row: it
+ * validates the caller's membership and the shape of the reference, then lets
+ * the `messages` RLS insert policy re-check membership a second time. The
+ * `handle_chat_message_notify` trigger and the `messages` realtime publication
+ * deliver it to the recipient without a refresh — same pipeline as text.
+ */
+export async function sendVoiceMessageAction(
+  conversationId: string,
+  audioPath: string,
+  durationMs: number,
+  mimeType: string,
+  fileSizeBytes: number,
+  waveformData: number[],
+  idempotencyKey?: string,
+): Promise<ChatActionResult> {
+  const viewer = await requireApprovedMember();
+
+  if (!uuidPattern.test(conversationId)) {
+    return { status: "error", code: "invalid_conversation" };
+  }
+
+  // Server-side validation — the browser is not trusted. The reference must
+  // look like a `voice` bucket key owned by the sender, inside their own
+  // `<user_id>/<uuid>.<ext>` folder (mirrors the avatar upload contract).
+  const pathOk = new RegExp(
+    `^voice/${viewer.id}/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(webm|m4a|mp3|wav|ogg)$`,
+  ).test(audioPath);
+  if (!pathOk) {
+    return { status: "error", code: "send_failed" };
+  }
+
+  // Size ceilings and the codec allow-list, as a backstop on top of the
+  // Storage bucket's own limits — the uploaded bytes, not this row, carry the
+  // weight, but a forged client must not be able to stuff the table.
+  const sizeOk =
+    Number.isFinite(fileSizeBytes) &&
+    fileSizeBytes > 0 &&
+    fileSizeBytes <= MAX_VOICE_BYTES;
+  if (!sizeOk) {
+    return { status: "error", code: "send_failed" };
+  }
+  if (!isVoiceMime(mimeType)) {
+    return { status: "error", code: "send_failed" };
+  }
+
+  const supabase = await createClient();
+
+  const withinLimit = await consumeRateLimit(
+    supabase,
+    rateLimitRules.voiceSend,
+    hashRateLimitKey(`user:${viewer.id}`),
+  );
+
+  if (!withinLimit) return { status: "error", code: "too_many_attempts" };
+
+  // Duration: ms integers only; reject fractional or script-generated values.
+  const duration = Math.round(durationMs);
+  const durationOk =
+    Number.isFinite(duration) && duration > 0 && duration <= MAX_VOICE_DURATION_MS;
+  if (!durationOk) {
+    return { status: "error", code: "send_failed" };
+  }
+
+  // Waveform: bounded numeric samples the player can always render. This is a
+  // `jsonb` column and an attacker-controlled array would be cheap to inflate,
+  // so clamp shape and ranges here — never trust the composer.
+  if (
+    !Array.isArray(waveformData) ||
+    waveformData.length > 512 ||
+    !waveformData.every(
+      (v) => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 1,
+    )
+  ) {
+    return { status: "error", code: "send_failed" };
+  }
+
+  const insert: {
+    conversation_id: string;
+    sender_id: string;
+    body: string;
+    type: string;
+    audio_path: string;
+    duration_ms: number;
+    mime_type: string;
+    file_size_bytes: number;
+    waveform_data: Json;
+    idempotency_key?: string;
+  } = {
+    conversation_id: conversationId,
+    sender_id: viewer.id,
+    body: "",
+    type: "voice",
+    audio_path: audioPath,
+    duration_ms: duration,
+    mime_type: mimeType,
+    file_size_bytes: fileSizeBytes,
+    waveform_data: waveformData as unknown as Json,
+  };
+  if (idempotencyKey) insert.idempotency_key = idempotencyKey;
+
+  const { error } = await supabase.from("messages").insert(insert);
+
+  if (error) {
+    const text = error.message.toLowerCase();
+    if (text.includes("unique") && text.includes("idempotency")) {
+      // A retry with the same key: the message already exists — treat as success.
+      return { status: "success", conversationId };
+    }
+    console.error("[chat] sendVoiceMessage failed", error.message);
+    return { status: "error", code: "send_failed" };
+  }
+
+  const locale = await getLocale();
+  revalidatePath(`/${locale}/chat/${conversationId}`);
+
+  return { status: "success", conversationId };
 }

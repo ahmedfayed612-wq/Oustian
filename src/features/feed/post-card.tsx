@@ -28,9 +28,12 @@ import { signedStorageUrls } from "@/lib/supabase/storage";
 export type PostCardMedia = {
   id: string;
   url: string;
+  thumbUrl: string;
   altText: string | null;
   width: number;
   height: number;
+  thumbWidth: number | null;
+  thumbHeight: number | null;
 };
 
 export type PostCardProps = {
@@ -372,7 +375,7 @@ export function PostCard({
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={item.url}
+                      src={item.thumbUrl || item.url}
                       alt={item.altText || ""}
                       loading="lazy"
                       className="size-full object-cover transition duration-300 group-hover:scale-[1.01]"

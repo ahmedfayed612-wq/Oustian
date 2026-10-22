@@ -14,6 +14,7 @@ export const postSchema = z
   .object({
     body: z.string().trim().max(5000, "post_too_long").optional().default(""),
     mediaKey: z.string().trim().min(1).optional(),
+    thumbKey: z.string().trim().min(1).optional(),
     altText: z
       .string()
       .trim()

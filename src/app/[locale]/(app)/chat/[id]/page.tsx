@@ -47,6 +47,7 @@ export default async function ConversationPage({
     <Thread
       conversationId={id}
       meId={viewer.id}
+      isMember={thread.isMember}
       initialMessages={thread.messages}
       peerName={thread.peer?.fullName ?? ""}
       peerUsername={thread.peer?.username ?? ""}

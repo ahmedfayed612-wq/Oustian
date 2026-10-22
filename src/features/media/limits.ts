@@ -15,9 +15,19 @@ export const POST_MEDIA_BUCKET = "post-media";
  */
 export const STORY_MEDIA_BUCKET = "story-media";
 
-export const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
+export const MAX_IMAGE_BYTES = 12 * 1024 * 1024; // 12 MB (pre-processing limit)
 export const MIN_IMAGE_DIMENSION = 200; // px, each side
 export const MAX_ALT_TEXT_LENGTH = 425;
+
+/**
+ * Photo processing targets. Output is WebP; the canvas re-encode drops EXIF
+ * (including GPS) and re-orients per the EXIF orientation tag, so the stored
+ * bytes are the authority and no client-supplied metadata is trusted.
+ */
+export const MAX_PROCESSED_DIMENSION = 2048; // px, longest edge
+export const THUMBNAIL_MAX_DIMENSION = 480; // px, longest edge
+export const WEBP_QUALITY = 0.85; // encoder quality 80..85 band
+export const OUTPUT_IMAGE_MIME = "image/webp";
 
 /**
  * Story video policy. Videos share the image policy's *shape* (accepted types,

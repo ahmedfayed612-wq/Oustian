@@ -50,7 +50,7 @@ export async function createPostAction(
 
   if (!withinLimit) return { status: "error", code: "too_many_attempts" };
 
-  const { body, mediaKey, altText } = parsed.data;
+  const { body, mediaKey, thumbKey, altText } = parsed.data;
 
   // Text-only post
   if (!mediaKey) {
@@ -68,8 +68,12 @@ export async function createPostAction(
       console.error("[feed] invalid media key format/ownership", mediaKey);
       return { status: "error", code: "photo_wrong_type" };
     }
+    if (thumbKey && !isValidMediaKey(thumbKey, viewer.id)) {
+      console.error("[feed] invalid thumbnail key format/ownership", thumbKey);
+      return { status: "error", code: "photo_wrong_type" };
+    }
 
-    // Inspect stored bytes in Supabase Storage to confirm file validity and dimensions
+    // Inspect the stored full-resolution bytes to confirm validity + dimensions
     const { data: fileData, error: downloadError } = await supabase.storage
       .from(POST_MEDIA_BUCKET)
       .download(mediaKey);
@@ -79,33 +83,58 @@ export async function createPostAction(
       return { status: "error", code: "photo_unreadable" };
     }
 
-    const arrayBuffer = await fileData.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
-    const validation = validatePhotoBytes(bytes, bytes.length);
+    const fullBytes = new Uint8Array(await fileData.arrayBuffer());
+    const fullValidation = validatePhotoBytes(fullBytes, fullBytes.length);
 
-    if (!validation.ok) {
-      console.warn("[feed] photo validation failed on server", validation.code);
-      // Clean up invalid upload
+    if (!fullValidation.ok) {
+      console.warn("[feed] photo validation failed on server", fullValidation.code);
       await supabase.storage.from(POST_MEDIA_BUCKET).remove([mediaKey]);
-      return { status: "error", code: validation.code };
+      if (thumbKey) {
+        await supabase.storage.from(POST_MEDIA_BUCKET).remove([thumbKey]);
+      }
+      return { status: "error", code: fullValidation.code };
     }
 
-    const { image } = validation;
+    // Inspect the stored thumbnail bytes as well (never trust client metadata).
+    let thumbImage;
+    if (thumbKey) {
+      const { data: thumbData, error: thumbDownloadError } = await supabase.storage
+        .from(POST_MEDIA_BUCKET)
+        .download(thumbKey);
+
+      if (thumbDownloadError || !thumbData) {
+        console.error("[feed] failed to download thumbnail", thumbDownloadError?.message);
+        await supabase.storage.from(POST_MEDIA_BUCKET).remove([mediaKey, thumbKey]);
+        return { status: "error", code: "photo_unreadable" };
+      }
+
+      const thumbBytes = new Uint8Array(await thumbData.arrayBuffer());
+      const thumbValidation = validatePhotoBytes(thumbBytes, thumbBytes.length);
+      if (!thumbValidation.ok) {
+        console.warn("[feed] thumbnail validation failed on server", thumbValidation.code);
+        await supabase.storage.from(POST_MEDIA_BUCKET).remove([mediaKey, thumbKey]);
+        return { status: "error", code: thumbValidation.code };
+      }
+      thumbImage = thumbValidation.image;
+    }
 
     const { error: rpcError } = await supabase.rpc("create_post", {
       p_body: body,
       p_media_key: mediaKey,
-      p_media_mime: image.mime,
-      p_media_size: bytes.length,
-      p_media_width: image.width,
-      p_media_height: image.height,
+      p_media_mime: fullValidation.image.mime,
+      p_media_size: fullBytes.length,
+      p_media_width: fullValidation.image.width,
+      p_media_height: fullValidation.image.height,
       p_media_alt: altText || undefined,
+      p_media_thumbnail_key: thumbKey || undefined,
+      p_thumb_width: thumbImage?.width ?? undefined,
+      p_thumb_height: thumbImage?.height ?? undefined,
     });
 
     if (rpcError) {
       console.error("[feed] photo post creation failed", rpcError.message);
-      // Clean up orphaned upload on failure
-      await supabase.storage.from(POST_MEDIA_BUCKET).remove([mediaKey]);
+      const cleanupKeys = [mediaKey, thumbKey].filter(Boolean) as string[];
+      await supabase.storage.from(POST_MEDIA_BUCKET).remove(cleanupKeys);
       return { status: "error", code: "post_failed" };
     }
   }

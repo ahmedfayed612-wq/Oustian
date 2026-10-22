@@ -306,13 +306,27 @@ export type Database = {
           created_at: string
           id: string
           sender_id: string
+          type: string
+          audio_path: string | null
+          duration_ms: number | null
+          mime_type: string | null
+          file_size_bytes: number | null
+          waveform_data: Json | null
+          idempotency_key: string | null
         }
         Insert: {
-          body: string
+          body?: string
           conversation_id: string
           created_at?: string
           id?: string
           sender_id: string
+          type?: string
+          audio_path?: string | null
+          duration_ms?: number | null
+          mime_type?: string | null
+          file_size_bytes?: number | null
+          waveform_data?: Json | null
+          idempotency_key?: string | null
         }
         Update: {
           body?: string
@@ -320,6 +334,13 @@ export type Database = {
           created_at?: string
           id?: string
           sender_id?: string
+          type?: string
+          audio_path?: string | null
+          duration_ms?: number | null
+          mime_type?: string | null
+          file_size_bytes?: number | null
+          waveform_data?: Json | null
+          idempotency_key?: string | null
         }
         Relationships: [
           {
@@ -497,6 +518,9 @@ export type Database = {
           mime_type: string
           post_id: string
           storage_key: string
+          thumbnail_key: string | null
+          thumb_height: number | null
+          thumb_width: number | null
           width: number
         }
         Insert: {
@@ -510,6 +534,9 @@ export type Database = {
           mime_type: string
           post_id: string
           storage_key: string
+          thumbnail_key?: string | null
+          thumb_height?: number | null
+          thumb_width?: number | null
           width: number
         }
         Update: {
@@ -523,6 +550,9 @@ export type Database = {
           mime_type?: string
           post_id?: string
           storage_key?: string
+          thumbnail_key?: string | null
+          thumb_height?: number | null
+          thumb_width?: number | null
           width?: number
         }
         Relationships: [
@@ -1240,6 +1270,9 @@ export type Database = {
           p_media_mime?: string
           p_media_size?: number
           p_media_width?: number
+          p_media_thumbnail_key?: string
+          p_thumb_height?: number
+          p_thumb_width?: number
         }
         Returns: string
       }
