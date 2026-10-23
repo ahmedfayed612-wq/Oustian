@@ -19,8 +19,8 @@ export async function FeedComposer() {
   const avatarUrl = await signedStorageUrl(supabase, viewer.avatar_path);
 
   return (
-    <Card className="p-3">
-      <div className="flex items-center gap-2.5">
+    <Card className="p-4">
+      <div className="flex items-center gap-3">
         <Avatar size="md" name={viewer.full_name} src={avatarUrl} />
         <Link
           href="/create"

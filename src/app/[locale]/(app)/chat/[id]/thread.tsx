@@ -2,7 +2,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
-import { ArrowLeft, Send, Reply, Pencil, Trash2, Smile, Info, X, Flame } from "lucide-react";
+import { ArrowLeft, Send, Reply, Pencil, Trash2, Smile, Info, X, Flame, MoreHorizontal } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -415,7 +415,7 @@ export function Thread({ conversationId, meId, isMember, initialMessages, peerNa
                 <span className={mine?"mt-1 flex items-center justify-end gap-1 text-[0.65rem] font-medium text-on-brand/80":"mt-1 flex items-center justify-end gap-1 text-[0.65rem] font-medium text-muted"}><time dateTime={m.created_at}>{format.dateTime(new Date(m.created_at),{hour:"numeric",minute:"2-digit"})}</time>{(m as {is_edited?:boolean}).is_edited?<span>· {t("edited")}</span>:null}{mine?<MessageStatus state={msgState(m,meId,receipts)} tone="mine" />:null}</span>
                 {counts.size>0?<span className="-mb-1 mt-1.5 flex flex-wrap gap-1">{[...counts.entries()].map(([e,c])=>(<button key={e} type="button" onClick={()=>setPickerFor(m.id)} className={mine?"flex items-center gap-0.5 rounded-full bg-black/20 px-2 py-0.5 text-xs leading-none":"flex items-center gap-0.5 rounded-full border border-border/70 bg-surface-2 px-2 py-0.5 text-xs leading-none shadow-sm"}>{e} <span className="font-semibold">{c}</span></button>))}</span>:null}
               </div>
-              <span className="mt-0.5 flex gap-0.5 text-muted" data-msg-menu>
+              <span className="mt-0.5 flex gap-0.5 text-muted opacity-0 transition-opacity duration-150 group-hover:opacity-100" data-msg-menu>
                 <button type="button" aria-label={t("reply")} onClick={()=>{setMenuFor(null);setPickerFor(null);setReplyTo(m);}} className="rounded-full p-1.5 transition-colors hover:bg-surface-2 hover:text-text"><Reply className="size-4" /></button>
                 <button type="button" aria-label={t("react")} aria-expanded={pickerFor===m.id} onClick={()=>{setMenuFor(null);setPickerFor(pickerFor===m.id?null:m.id);}} className={pickerFor===m.id?"rounded-full bg-surface-2 p-1.5 text-brand shadow-sm":"rounded-full p-1.5 transition-colors hover:bg-surface-2 hover:text-text"}><Smile className="size-4" /></button>
                 {mine&&!deleted?(<>
@@ -426,7 +426,48 @@ export function Thread({ conversationId, meId, isMember, initialMessages, peerNa
               </span>
               {failed?(<p className="mt-0.5 text-end text-[0.7rem] font-medium text-danger">{t("errors.send_failed")}</p>):null}
               {pending&&!failed?(<p className="mt-0.5 text-end text-[0.7rem] text-muted">{t("sending")}…</p>):null}
-              {menuFor===m.id?(<span data-msg-menu className={mine?"absolute end-0 top-full z-20 mt-1 flex min-w-40 flex-col gap-0.5 rounded-xl border border-border bg-surface p-1 text-xs shadow-lift":"absolute start-0 top-full z-20 mt-1 flex min-w-40 flex-col gap-0.5 rounded-xl border border-border bg-surface p-1 text-xs shadow-lift"}><button type="button" onClick={()=>void del(true)} className="rounded-lg px-3 py-2 text-start transition-colors hover:bg-surface-2">{t("deleteEveryone")}</button><button type="button" onClick={()=>void del(false)} className="rounded-lg px-3 py-2 text-start transition-colors hover:bg-surface-2">{t("deleteMe")}</button></span>):null}
+              <button
+                type="button"
+                aria-label={t("messageActions") || "More actions"}
+                aria-expanded={menuFor === m.id}
+                onClick={() => { setPickerFor(null); setMenuFor(menuFor === m.id ? null : m.id); }}
+                className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-text md:hidden"
+              >
+                <MoreHorizontal className="size-4" aria-hidden="true" />
+              </button>
+              {menuFor === m.id ? (
+                <span
+                  data-msg-menu
+                  className={
+                    mine
+                      ? "absolute end-0 top-full z-20 mt-1 flex min-w-40 flex-col gap-0.5 rounded-xl border border-border bg-surface p-1 text-xs shadow-lift"
+                      : "absolute start-0 top-full z-20 mt-1 flex min-w-40 flex-col gap-0.5 rounded-xl border border-border bg-surface p-1 text-xs shadow-lift"
+                  }
+                >
+                  <button type="button" onClick={() => { setMenuFor(null); setPickerFor(null); setReplyTo(m); }} className="rounded-lg px-3 py-2 text-start transition-colors hover:bg-surface-2">
+                    {t("reply")}
+                  </button>
+                  <button type="button" onClick={() => { setMenuFor(null); setPickerFor(pickerFor === m.id ? null : m.id); }} className="rounded-lg px-3 py-2 text-start transition-colors hover:bg-surface-2">
+                    {t("react")}
+                  </button>
+                  {mine && !deleted ? (
+                    <>
+                      <button type="button" onClick={() => { setMenuFor(null); setPickerFor(null); setEditing(m); setEditBody(m.body); }} className="rounded-lg px-3 py-2 text-start transition-colors hover:bg-surface-2">
+                        {t("edit")}
+                      </button>
+                      <button type="button" onClick={() => { setMenuFor(null); setPickerFor(null); setInfoFor(m); }} className="rounded-lg px-3 py-2 text-start transition-colors hover:bg-surface-2">
+                        {t("messageInfo")}
+                      </button>
+                      <button type="button" onClick={() => void del(true)} className="rounded-lg px-3 py-2 text-start transition-colors hover:bg-red-500/10 text-danger">
+                        {t("deleteEveryone")}
+                      </button>
+                      <button type="button" onClick={() => void del(false)} className="rounded-lg px-3 py-2 text-start transition-colors hover:bg-red-500/10 text-danger">
+                        {t("deleteMe")}
+                      </button>
+                    </>
+                  ) : null}
+                </span>
+              ) : null}
             </div>
           </li>);})}
         </ul>

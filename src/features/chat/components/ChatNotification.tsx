@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { AVATAR_BUCKET } from "@/lib/supabase/storage";
 import { Avatar } from "@/components/ui/Avatar";
 type Toast = { id: string; senderName: string; preview: string; conversationId: string; avatar: string | null };
 export function ChatNotification({ meId, activeConversationId }: { meId: string; activeConversationId?: string | null }) {
@@ -25,7 +26,21 @@ export function ChatNotification({ meId, activeConversationId }: { meId: string;
           if (!alive) return;
           const body = ((msg as { body?: string } | null)?.body ?? "").slice(0, 80);
           if (!body) return;
-          const t: Toast = { id: row.id, senderName: (prof as { full_name?: string } | null)?.full_name ?? "Oustians", preview: body, conversationId: row.conversation_id, avatar: null };
+          const actor = prof as { full_name?: string; avatar_path?: string | null } | null;
+          const t: Toast = {
+            id: row.id,
+            senderName: actor?.full_name ?? "Oustians",
+            preview: body,
+            conversationId: row.conversation_id,
+            avatar: null,
+          };
+          // Sign the sender's private avatar so the toast can render a photo on
+          // private buckets (avatars are not public — the path alone is not enough).
+          if (actor?.avatar_path) {
+            const client = createClient() as unknown as any;
+            const { data } = await client.storage.from(AVATAR_BUCKET).createSignedUrl(actor.avatar_path, 600);
+            if (data?.signedUrl) t.avatar = data.signedUrl;
+          }
           setToasts((p) => (p.some((x) => x.id === t.id) ? p : [...p.slice(-2), t]));
           window.setTimeout(() => { if (alive) setToasts((p) => p.filter((x) => x.id !== t.id)); }, 6000);
         } catch { /* toast is best-effort */ }

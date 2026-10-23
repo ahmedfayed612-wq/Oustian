@@ -370,15 +370,25 @@ export function PostCard({
                   aria-label={item.altText || t("viewPhoto")}
                 >
                   <div
-                    className="relative w-full max-h-[520px] min-h-[160px] overflow-hidden bg-surface-2"
+                    className="relative w-full aspect-[16/9] max-h-[520px] min-h-[160px] overflow-hidden bg-surface-2/60"
                     style={{ aspectRatio: ratio }}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {/* Skeleton while the lazy image loads; fades out once loaded. */}
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0 animate-pulse rounded-control bg-muted-decor/30 motion-reduce:animate-none"
+                    />
                     <img
                       src={item.thumbUrl || item.url}
                       alt={item.altText || ""}
                       loading="lazy"
-                      className="size-full object-cover transition duration-300 group-hover:scale-[1.01]"
+                      onLoad={(e) => {
+                        const el = e.currentTarget;
+                        // Remove the placeholder as soon as the real bytes arrive so
+                        // there is never a "blank" region while the image renders.
+                        el.style.opacity = "1";
+                      }}
+                      className="size-full object-cover transition duration-300 group-hover:scale-[1.01] opacity-0"
                     />
                   </div>
                 </button>
