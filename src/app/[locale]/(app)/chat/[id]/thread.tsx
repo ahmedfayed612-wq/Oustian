@@ -254,26 +254,16 @@ export function Thread({ conversationId, meId, isMember, initialMessages, peerNa
     if (trimmed.length > 2000) { setErrorKey("too_long"); return; }
     setSending(true); setErrorKey(null);
     const tempId = `pending-${Date.now()}`;
-    // Idempotency key: one per send attempt, retried on failure so a replayed
-    // insert never creates a duplicate message.
-    const idempotencyKey = crypto.randomUUID();
-    const optimistic: LocalMsg = { id: tempId, conversation_id: conversationId, sender_id: meId, body: trimmed, created_at: new Date().toISOString(), reply_to_message_id: replyTo?.id ?? null, idempotency_key: idempotencyKey, _pending: true } as LocalMsg;
+    const optimistic: LocalMsg = { id: tempId, conversation_id: conversationId, sender_id: meId, body: trimmed, created_at: new Date().toISOString(), reply_to_message_id: replyTo?.id ?? null, _pending: true } as LocalMsg;
     setMessages((p)=>[...p, optimistic]); setBody(""); setReplyTo(null);
     try {
       const supabase = createClient() as unknown as any;
-      const { data, error } = await supabase.from("messages").insert({ conversation_id: conversationId, sender_id: meId, body: trimmed, reply_to_message_id: replyTo?.id ?? null, idempotency_key: idempotencyKey }).select().single();
+      const { data, error } = await supabase.from("messages").insert({ conversation_id: conversationId, sender_id: meId, body: trimmed, reply_to_message_id: replyTo?.id ?? null }).select().single();
       setMessages((p)=>p.filter((m: any)=>m.id!==tempId));
       if (error) {
         const tx = error.message.toLowerCase();
-        if (tx.includes("unique") && tx.includes("idempotency")) {
-          // A retry with the same key: the message already exists, fetch it.
-          const { data: existing } = await supabase.from("messages").select("*").eq("idempotency_key", idempotencyKey).single();
-          if (existing) upsert(existing as LocalMsg);
-          else setMessages((p)=>[...p,{...optimistic,_pending:false,_failed:true}]);
-        } else {
-          setErrorKey(tx.includes("too_many")?"too_many_attempts":tx.includes("not_authorised")?"not_authorised":"send_failed");
-          setMessages((p)=>[...p,{...optimistic,_pending:false,_failed:true}]);
-        }
+        setErrorKey(tx.includes("too_many")?"too_many_attempts":tx.includes("not_authorised")?"not_authorised":"send_failed");
+        setMessages((p)=>[...p,{...optimistic,_pending:false,_failed:true}]);
         return;
       }
       if (data) upsert(data as LocalMsg);
@@ -308,7 +298,6 @@ export function Thread({ conversationId, meId, isMember, initialMessages, peerNa
         voiceAbortRef.current = null;
         setVoiceProgress(null);
 
-        const idempotencyKey = crypto.randomUUID();
         const res = await sendVoiceMessageAction(
           conversationId,
           path,
@@ -316,7 +305,6 @@ export function Thread({ conversationId, meId, isMember, initialMessages, peerNa
           mime ?? "audio/webm",
           d.fileSizeBytes,
           d.waveformData,
-          idempotencyKey,
         );
         if (res.status !== "success") {
           setVoiceError(t("errors.send_failed"));

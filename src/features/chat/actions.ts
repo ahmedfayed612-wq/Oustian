@@ -111,7 +111,6 @@ export async function sendVoiceMessageAction(
   mimeType: string,
   fileSizeBytes: number,
   waveformData: number[],
-  idempotencyKey?: string,
 ): Promise<ChatActionResult> {
   const viewer = await requireApprovedMember();
 
@@ -184,7 +183,6 @@ export async function sendVoiceMessageAction(
     mime_type: string;
     file_size_bytes: number;
     waveform_data: Json;
-    idempotency_key?: string;
   } = {
     conversation_id: conversationId,
     sender_id: viewer.id,
@@ -196,16 +194,10 @@ export async function sendVoiceMessageAction(
     file_size_bytes: fileSizeBytes,
     waveform_data: waveformData as unknown as Json,
   };
-  if (idempotencyKey) insert.idempotency_key = idempotencyKey;
 
   const { error } = await supabase.from("messages").insert(insert);
 
   if (error) {
-    const text = error.message.toLowerCase();
-    if (text.includes("unique") && text.includes("idempotency")) {
-      // A retry with the same key: the message already exists — treat as success.
-      return { status: "success", conversationId };
-    }
     console.error("[chat] sendVoiceMessage failed", error.message);
     return { status: "error", code: "send_failed" };
   }
