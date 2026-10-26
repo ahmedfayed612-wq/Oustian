@@ -53,20 +53,16 @@ export default async function ProfilePage() {
 
   // Extract all media keys across every post to sign them in a single batch
   const allMediaKeys = posts.flatMap((p) => p.media.map((m) => m.storageKey));
-  const allThumbKeys = posts.flatMap((p) =>
-    p.media.map((m) => m.thumbnailKey).filter(Boolean),
-  );
 
   // One batched Storage call signs this member's avatar, every post author's
   // avatar (usually the same path repeated) and each pending requester.
-  const [avatarUrls, mediaUrls, thumbUrls] = await Promise.all([
+  const [avatarUrls, mediaUrls] = await Promise.all([
     signedStorageUrls(supabase, [
       profile.avatar_path,
       ...posts.map((item) => item.author.avatarPath),
       ...requests.map((person) => person.avatar_path),
     ]),
     signedPostMediaUrls(supabase, allMediaKeys),
-    signedPostMediaUrls(supabase, allThumbKeys),
   ]);
   const avatarUrl = profile.avatar_path
     ? (avatarUrls[profile.avatar_path] ?? null)
@@ -245,12 +241,9 @@ export default async function ProfilePage() {
                 media={item.media.map((m) => ({
                   id: m.id,
                   url: mediaUrls[m.storageKey] ?? "",
-                  thumbUrl: m.thumbnailKey ? (thumbUrls[m.thumbnailKey] ?? "") : "",
                   altText: m.altText,
                   width: m.width,
                   height: m.height,
-                  thumbWidth: m.thumbWidth,
-                  thumbHeight: m.thumbHeight,
                 }))}
                 reactions={item.reactions}
                 initialCommentCount={item.commentCount}

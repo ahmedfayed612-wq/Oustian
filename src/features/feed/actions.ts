@@ -50,7 +50,7 @@ export async function createPostAction(
 
   if (!withinLimit) return { status: "error", code: "too_many_attempts" };
 
-  const { body, mediaKey, thumbKey, altText } = parsed.data;
+  const { body, mediaKey, altText } = parsed.data;
 
   // Text-only post
   if (!mediaKey) {
@@ -68,12 +68,11 @@ export async function createPostAction(
       console.error("[feed] invalid media key format/ownership", mediaKey);
       return { status: "error", code: "photo_wrong_type" };
     }
-    if (thumbKey && !isValidMediaKey(thumbKey, viewer.id)) {
-      console.error("[feed] invalid thumbnail key format/ownership", thumbKey);
-      return { status: "error", code: "photo_wrong_type" };
-    }
 
-    // Inspect the stored full-resolution bytes to confirm validity + dimensions
+    // Inspect the stored full-resolution bytes to confirm validity + dimensions.
+    // Thumbnails are not stored by this path in the current schema — only the
+    // full-resolution object is written into `posts` / `post_media` by
+    // `create_post` (see supabase/migrations/20260926100000_post_media_photo_posts.sql).
     const { data: fileData, error: downloadError } = await supabase.storage
       .from(POST_MEDIA_BUCKET)
       .download(mediaKey);
@@ -89,33 +88,7 @@ export async function createPostAction(
     if (!fullValidation.ok) {
       console.warn("[feed] photo validation failed on server", fullValidation.code);
       await supabase.storage.from(POST_MEDIA_BUCKET).remove([mediaKey]);
-      if (thumbKey) {
-        await supabase.storage.from(POST_MEDIA_BUCKET).remove([thumbKey]);
-      }
       return { status: "error", code: fullValidation.code };
-    }
-
-    // Inspect the stored thumbnail bytes as well (never trust client metadata).
-    let thumbImage;
-    if (thumbKey) {
-      const { data: thumbData, error: thumbDownloadError } = await supabase.storage
-        .from(POST_MEDIA_BUCKET)
-        .download(thumbKey);
-
-      if (thumbDownloadError || !thumbData) {
-        console.error("[feed] failed to download thumbnail", thumbDownloadError?.message);
-        await supabase.storage.from(POST_MEDIA_BUCKET).remove([mediaKey, thumbKey]);
-        return { status: "error", code: "photo_unreadable" };
-      }
-
-      const thumbBytes = new Uint8Array(await thumbData.arrayBuffer());
-      const thumbValidation = validatePhotoBytes(thumbBytes, thumbBytes.length);
-      if (!thumbValidation.ok) {
-        console.warn("[feed] thumbnail validation failed on server", thumbValidation.code);
-        await supabase.storage.from(POST_MEDIA_BUCKET).remove([mediaKey, thumbKey]);
-        return { status: "error", code: thumbValidation.code };
-      }
-      thumbImage = thumbValidation.image;
     }
 
     const { error: rpcError } = await supabase.rpc("create_post", {
@@ -126,15 +99,11 @@ export async function createPostAction(
       p_media_width: fullValidation.image.width,
       p_media_height: fullValidation.image.height,
       p_media_alt: altText || undefined,
-      p_media_thumbnail_key: thumbKey || undefined,
-      p_thumb_width: thumbImage?.width ?? undefined,
-      p_thumb_height: thumbImage?.height ?? undefined,
     });
 
     if (rpcError) {
       console.error("[feed] photo post creation failed", rpcError.message);
-      const cleanupKeys = [mediaKey, thumbKey].filter(Boolean) as string[];
-      await supabase.storage.from(POST_MEDIA_BUCKET).remove(cleanupKeys);
+      await supabase.storage.from(POST_MEDIA_BUCKET).remove([mediaKey]);
       return { status: "error", code: "post_failed" };
     }
   }

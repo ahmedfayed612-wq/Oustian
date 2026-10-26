@@ -22,12 +22,9 @@ import {
 export type FeedPostMedia = {
   id: string;
   storageKey: string;
-  thumbnailKey: string | null;
   mimeType: string;
   width: number;
   height: number;
-  thumbWidth: number | null;
-  thumbHeight: number | null;
   altText: string | null;
   displayOrder: number;
 };
@@ -122,12 +119,9 @@ async function hydrateFeedPosts(
     list.push({
       id: item.id,
       storageKey: item.storage_key,
-      thumbnailKey: item.thumbnail_key ?? null,
       mimeType: item.mime_type,
       width: item.width,
       height: item.height,
-      thumbWidth: item.thumb_width ?? null,
-      thumbHeight: item.thumb_height ?? null,
       altText: item.alt_text,
       displayOrder: item.display_order,
     });

@@ -47,11 +47,8 @@ export default async function HomePage() {
   // Thumbnail keys are signed in the same batch so the feed can lazy-load the
   // full-resolution image only on demand.
   const allMediaKeys = posts.flatMap((p) => p.media.map((m) => m.storageKey));
-  const allThumbKeys = posts.flatMap((p) =>
-    p.media.map((m) => m.thumbnailKey).filter(Boolean),
-  );
 
-  const [avatarUrls, mediaUrls, thumbUrls] = await Promise.all([
+  const [avatarUrls, mediaUrls] = await Promise.all([
     signedStorageUrls(supabase, [
       viewer.avatar_path,
       ...posts.map((item) => item.author.avatarPath),
@@ -59,7 +56,6 @@ export default async function HomePage() {
       ...suggestedCandidates.map((person) => person.avatarPath),
     ]),
     signedPostMediaUrls(supabase, allMediaKeys),
-    signedPostMediaUrls(supabase, allThumbKeys),
   ]);
 
   const viewerAvatarUrl = viewer.avatar_path
@@ -133,12 +129,9 @@ export default async function HomePage() {
                 media={entry.post.media.map((m) => ({
                   id: m.id,
                   url: mediaUrls[m.storageKey] ?? "",
-                  thumbUrl: m.thumbnailKey ? (thumbUrls[m.thumbnailKey] ?? "") : "",
                   altText: m.altText,
                   width: m.width,
                   height: m.height,
-                  thumbWidth: m.thumbWidth,
-                  thumbHeight: m.thumbHeight,
                 }))}
                 reactions={entry.post.reactions}
                 initialCommentCount={entry.post.commentCount}
