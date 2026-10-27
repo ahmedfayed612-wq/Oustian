@@ -47,7 +47,6 @@ export function PostComposer({
 
   // Attached photo state
   const [mediaKey, setMediaKey] = useState<string | null>(null);
-  const [thumbKey, setThumbKey] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [altText, setAltText] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -99,7 +98,7 @@ export function PostComposer({
         return;
       }
 
-      // One round trip mints both signed upload URLs (full + thumbnail).
+      // Mint one signed upload URL for the full-resolution photo.
       const tickets = await createPostMediaTicketsAction();
 
       if (!tickets.ok) {
@@ -114,33 +113,17 @@ export function PostComposer({
 
       const supabase = createClient();
 
-      // Upload full-resolution + thumbnail in parallel to their signed URLs.
-      const [fullResult, thumbResult] = await Promise.all([
-        supabase.storage
-          .from(tickets.full.bucket)
-          .uploadToSignedUrl(tickets.full.path, tickets.full.token, photo.full, {
-            contentType: OUTPUT_IMAGE_MIME,
-          }),
-        supabase.storage
-          .from(tickets.thumb.bucket)
-          .uploadToSignedUrl(tickets.thumb.path, tickets.thumb.token, photo.thumb, {
-            contentType: OUTPUT_IMAGE_MIME,
-          }),
-      ]);
+      // Upload the full-resolution photo to its signed URL.
+      const fullResult = await supabase.storage
+        .from(tickets.full.bucket)
+        .uploadToSignedUrl(tickets.full.path, tickets.full.token, photo.full, {
+          contentType: OUTPUT_IMAGE_MIME,
+        });
 
       const fullErr = fullResult.error;
-      const thumbErr = thumbResult.error;
 
       if (fullErr) {
         console.error("[composer] full upload failed", fullErr.message);
-        setClientError(t("photoUnreadable"));
-        setUploading(false);
-        return;
-      }
-      if (thumbErr) {
-        console.error("[composer] thumbnail upload failed", thumbErr.message);
-        // Best-effort cleanup of the full object so nothing is orphaned.
-        await supabase.storage.from(POST_MEDIA_BUCKET).remove([tickets.full.path]);
         setClientError(t("photoUnreadable"));
         setUploading(false);
         return;
@@ -149,7 +132,6 @@ export function PostComposer({
       const previewObjectUrl = URL.createObjectURL(photo.full);
       setPreviewUrl(previewObjectUrl);
       setMediaKey(tickets.full.path);
-      setThumbKey(tickets.thumb.path);
     } catch (err) {
       console.error("[composer] photo upload error", err);
       setClientError(t("photoUnreadable"));
@@ -164,7 +146,6 @@ export function PostComposer({
     }
     setPreviewUrl(null);
     setMediaKey(null);
-    setThumbKey(null);
     setAltText("");
     setClientError(null);
     if (fileInputRef.current) {
@@ -196,7 +177,6 @@ export function PostComposer({
   return (
     <form action={formAction} className="flex flex-col gap-3" noValidate>
       <input type="hidden" name="mediaKey" value={mediaKey ?? ""} />
-      <input type="hidden" name="thumbKey" value={thumbKey ?? ""} />
       <input type="hidden" name="altText" value={altText} />
 
       <Card className="flex flex-col gap-3 p-4">
