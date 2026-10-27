@@ -35,7 +35,10 @@ export interface VoiceRecorderProps {
   onCancelPreview: () => void;
 }
 
-export function VoiceRecorder({ onRecorded, onCancelPreview }: VoiceRecorderProps) {
+export function VoiceRecorder({
+  onRecorded,
+  onCancelPreview,
+}: VoiceRecorderProps) {
   const { stopAll } = useVoicePlayback();
 
   const [status, setStatus] = useState<Status>("idle");
@@ -93,7 +96,11 @@ export function VoiceRecorder({ onRecorded, onCancelPreview }: VoiceRecorderProp
       "audio/wav",
     ];
     for (const mime of candidates) {
-      if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(mime)) return mime;
+      if (
+        typeof MediaRecorder !== "undefined" &&
+        MediaRecorder.isTypeSupported(mime)
+      )
+        return mime;
     }
     return null;
   }, []);
@@ -232,7 +239,7 @@ export function VoiceRecorder({ onRecorded, onCancelPreview }: VoiceRecorderProp
     setStatus("requesting");
     requestPermission()
       .catch(() => {})
-      .finally(() => { });
+      .finally(() => {});
   }, [status, requestPermission]);
 
   const stopRecording = useCallback(() => {
@@ -245,7 +252,9 @@ export function VoiceRecorder({ onRecorded, onCancelPreview }: VoiceRecorderProp
   const cancelRecording = useCallback(() => {
     const recorder = recorderRef.current;
     if (recorder) {
-      try { recorder.stop(); } catch {}
+      try {
+        recorder.stop();
+      } catch {}
     }
     stopLiveLoop();
     stopAll();
@@ -292,7 +301,9 @@ export function VoiceRecorder({ onRecorded, onCancelPreview }: VoiceRecorderProp
   const formatMs = (ms: number) => {
     if (!Number.isFinite(ms) || ms <= 0) return "0:00";
     const m = Math.floor(ms / 60000);
-    const s = Math.floor((ms % 60000) / 1000).toString().padStart(2, "0");
+    const s = Math.floor((ms % 60000) / 1000)
+      .toString()
+      .padStart(2, "0");
     return `${m}:${s}`;
   };
 
@@ -309,19 +320,33 @@ export function VoiceRecorder({ onRecorded, onCancelPreview }: VoiceRecorderProp
 
       <div className="mb-1 flex items-center gap-2 px-1">
         <IconButton
-          label={status === "recording" ? "Stop recording" : status === "requesting" ? "Request microphone access" : "Record a voice message"}
+          label={
+            status === "recording"
+              ? "Stop recording"
+              : status === "requesting"
+                ? "Request microphone access"
+                : "Record a voice message"
+          }
           variant="soft"
           onClick={status === "recording" ? stopRecording : startRecording}
           className="voice-record-button"
           aria-busy={status === "requesting"}
         >
-          {status === "recording" ? <StopCircle className="size-4" aria-hidden /> : <Mic className="size-4" aria-hidden />}
+          {status === "recording" ? (
+            <StopCircle className="size-4" aria-hidden />
+          ) : (
+            <Mic className="size-4" aria-hidden />
+          )}
         </IconButton>
 
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium text-text">Voice message</p>
+          <p className="truncate text-xs font-medium text-text">
+            Voice message
+          </p>
           {status === "requesting" ? (
-            <p className="text-[0.7rem] text-muted">Requesting microphone access…</p>
+            <p className="text-[0.7rem] text-muted">
+              Requesting microphone access…
+            </p>
           ) : status === "recording" ? (
             <VoiceWaveform
               data={liveAmp}
@@ -336,15 +361,30 @@ export function VoiceRecorder({ onRecorded, onCancelPreview }: VoiceRecorderProp
         <div className="flex flex-none items-center gap-1">
           {status === "recording" ? (
             <>
-              <IconButton label="Cancel recording" variant="plain" onClick={cancelRecording} aria-label="Cancel recording">
+              <IconButton
+                label="Cancel recording"
+                variant="plain"
+                onClick={cancelRecording}
+                aria-label="Cancel recording"
+              >
                 <RotateCcw className="size-4" aria-hidden />
               </IconButton>
-              <IconButton label="Stop recording" variant="soft" onClick={stopRecording} aria-label="Stop recording">
+              <IconButton
+                label="Stop recording"
+                variant="soft"
+                onClick={stopRecording}
+                aria-label="Stop recording"
+              >
                 <StopCircle className="size-4" aria-hidden />
               </IconButton>
             </>
           ) : error ? (
-            <IconButton label="Dismiss" variant="plain" onClick={() => setError(null)} aria-label="Dismiss">
+            <IconButton
+              label="Dismiss"
+              variant="plain"
+              onClick={() => setError(null)}
+              aria-label="Dismiss"
+            >
               <X className="size-4" aria-hidden />
             </IconButton>
           ) : null}
@@ -353,7 +393,13 @@ export function VoiceRecorder({ onRecorded, onCancelPreview }: VoiceRecorderProp
 
       {(status === "requesting" || status === "recording") && (
         <div className="mt-1">
-          <VoiceWaveform data={liveAmp} positionMs={elapsedMs} durationMs={elapsedMs} playing={false} height={40} />
+          <VoiceWaveform
+            data={liveAmp}
+            positionMs={elapsedMs}
+            durationMs={elapsedMs}
+            playing={false}
+            height={40}
+          />
         </div>
       )}
 
@@ -380,4 +426,3 @@ export function VoiceRecorder({ onRecorded, onCancelPreview }: VoiceRecorderProp
     </div>
   );
 }
-

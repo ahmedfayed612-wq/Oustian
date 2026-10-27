@@ -366,11 +366,20 @@ export function Thread({ conversationId, meId, isMember, initialMessages, peerNa
   }
   async function del(everyone: boolean) {
     const m = menuFor ? messages.find((x)=>x.id===menuFor) : null; if (!m) return; const s = createClient() as unknown as any;
+    if (m.type==="voice") stopAll();
     if (everyone) await s.from("messages").update({ body: "", deleted_for_all: true, deleted_at: new Date().toISOString() }).eq("id", m.id);
     else { const cur = ((m as {deleted_for?:string[]}).deleted_for ?? []); await s.from("messages").update({ deleted_for: [...cur, meId] }).eq("id", m.id); }
     setMenuFor(null);
   }
   const byId = useMemo(()=>new Map(messages.map((m: any)=>[m.id,m])),[messages]);
+  // Switching threads (or deleting a message) must stop any still-playing
+  // voice clip so the user never hears an orphaned recording.
+  useEffect(() => {
+    stopAll();
+    return () => {
+      stopAll();
+    };
+  }, [conversationId, stopAll]);
   const visible = messages.filter((m: any)=>!((m as {deleted_for?:string[]}).deleted_for ?? []).includes(meId));
   return (
     <VoicePlaybackProvider>

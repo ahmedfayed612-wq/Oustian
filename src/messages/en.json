@@ -594,6 +594,7 @@
     "sendFailed": "Could not send your voice message. Please try again.",
     "confirmDelete": "Delete this recording?",
     "unavailable": "Voice message unavailable.",
+    "voiceUnavailable": "Voice message unavailable.",
     "typeLabel": "Voice message",
     "voiceMessageLabel": "Voice message",
     "voiceNotEditable": "Voice recordings can't be edited."

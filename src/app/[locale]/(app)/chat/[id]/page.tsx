@@ -6,6 +6,7 @@ import { loadThread, uuidPattern } from "@/features/chat/queries";
 import { getConversationStreak } from "@/features/chat/streaks";
 import { requireApprovedMember } from "@/features/auth/session";
 import { Thread } from "./thread";
+import { VoicePlaybackProvider } from "@/features/chat/components/VoicePlaybackContext";
 
 /**
  * One conversation. `loadThread()` proves membership (RLS enforces it too —
@@ -44,15 +45,17 @@ export default async function ConversationPage({
     : null;
 
   return (
-    <Thread
-      conversationId={id}
-      meId={viewer.id}
-      isMember={thread.isMember}
-      initialMessages={thread.messages}
-      peerName={thread.peer?.fullName ?? ""}
-      peerUsername={thread.peer?.username ?? ""}
-      peerAvatarUrl={avatarUrl}
-      streak={streak}
-    />
+    <VoicePlaybackProvider>
+      <Thread
+        conversationId={id}
+        meId={viewer.id}
+        isMember={thread.isMember}
+        initialMessages={thread.messages}
+        peerName={thread.peer?.fullName ?? ""}
+        peerUsername={thread.peer?.username ?? ""}
+        peerAvatarUrl={avatarUrl}
+        streak={streak}
+      />
+    </VoicePlaybackProvider>
   );
 }

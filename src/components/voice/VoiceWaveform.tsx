@@ -42,7 +42,7 @@ export function VoiceWaveform({
 
   const width = Math.max(1, points.length * WAVEFORM_CANVAS_MS);
   const effectivePositionMs = Math.min(positionMs, durationMs);
-  const playedWidth = ((effectivePositionMs / durationMs) * width) || 0;
+  const playedWidth = (effectivePositionMs / durationMs) * width || 0;
 
   return (
     <svg
@@ -76,7 +76,17 @@ export function VoiceWaveform({
       {points.map((amp, i) => {
         const x = i * WAVEFORM_CANVAS_MS;
         const h = Math.max(1, amp * (height - 4) + 2);
-        return <rect key={i} x={x} y={height - h} width={WAVEFORM_CANVAS_MS - 1} height={h} rx={1} fill="var(--brand)" />;
+        return (
+          <rect
+            key={i}
+            x={x}
+            y={height - h}
+            width={WAVEFORM_CANVAS_MS - 1}
+            height={h}
+            rx={1}
+            fill="var(--brand)"
+          />
+        );
       })}
 
       {/* Played portion fill. */}

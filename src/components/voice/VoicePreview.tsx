@@ -29,18 +29,27 @@ export interface VoicePreviewProps {
   error?: string | null;
 }
 
-export function VoicePreview({ draft, onDelete, onSend, isSending, error }: VoicePreviewProps) {
+export function VoicePreview({
+  draft,
+  onDelete,
+  onSend,
+  isSending,
+  error,
+}: VoicePreviewProps) {
   const { stopAll } = useVoicePlayback();
   const t = useTranslations("Voice");
 
   const formatMs = (ms: number) => {
     if (!Number.isFinite(ms) || ms <= 0) return "--:--";
     const m = Math.floor(ms / 60000);
-    const s = Math.floor((ms % 60000) / 1000).toString().padStart(2, "0");
+    const s = Math.floor((ms % 60000) / 1000)
+      .toString()
+      .padStart(2, "0");
     return `${m}:${s}`;
   };
 
-  const sizeMb = draft.fileSizeBytes > 0 ? (draft.fileSizeBytes / 1048576).toFixed(1) : "0";
+  const sizeMb =
+    draft.fileSizeBytes > 0 ? (draft.fileSizeBytes / 1048576).toFixed(1) : "0";
   const durationLabel = formatMs(draft.durationMs);
 
   const handleDelete = () => {
@@ -61,10 +70,20 @@ export function VoicePreview({ draft, onDelete, onSend, isSending, error }: Voic
         </div>
 
         <div className="flex flex-none items-center gap-1">
-          <IconButton label={t("delete")} variant="danger" onClick={handleDelete} aria-label={t("delete")}>
+          <IconButton
+            label={t("delete")}
+            variant="danger"
+            onClick={handleDelete}
+            aria-label={t("delete")}
+          >
             <Trash2 className="size-4" aria-hidden />
           </IconButton>
-          <IconButton label={t("recordAgain")} variant="plain" onClick={onDelete} aria-label={t("recordAgain")}>
+          <IconButton
+            label={t("recordAgain")}
+            variant="plain"
+            onClick={onDelete}
+            aria-label={t("recordAgain")}
+          >
             <RotateCcw className="size-4" aria-hidden />
           </IconButton>
         </div>
@@ -91,7 +110,11 @@ export function VoicePreview({ draft, onDelete, onSend, isSending, error }: Voic
         loadingLabel={t("sending")}
         className="mt-2 size-14 !rounded-full"
       >
-        {isSending ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Send className="size-5" aria-hidden />}
+        {isSending ? (
+          <Loader2 className="size-5 animate-spin" aria-hidden />
+        ) : (
+          <Send className="size-5" aria-hidden />
+        )}
         <span className="hidden">{isSending ? t("sending") : t("send")}</span>
       </Button>
     </div>

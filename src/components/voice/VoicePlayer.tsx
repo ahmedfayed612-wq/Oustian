@@ -143,7 +143,9 @@ export function VoicePlayer({
   const formatMs = (ms: number) => {
     if (!Number.isFinite(ms) || ms <= 0) return "--:--";
     const m = Math.floor(ms / 60000);
-    const s = Math.floor((ms % 60000) / 1000).toString().padStart(2, "0");
+    const s = Math.floor((ms % 60000) / 1000)
+      .toString()
+      .padStart(2, "0");
     return `${m}:${s}`;
   };
 
@@ -155,16 +157,30 @@ export function VoicePlayer({
       <audio ref={audioRef} src={audioUrl} preload="auto" className="hidden" />
       <div className="mb-1 flex items-center gap-2 px-1">
         <IconButton
-          label={hasError ? t("playbackFailed") : playingId === id ? t("pause") : t("play")}
+          label={
+            hasError
+              ? t("playbackFailed")
+              : playingId === id
+                ? t("pause")
+                : t("play")
+          }
           variant="soft"
           onClick={handlePlayPause}
           className="size-10 shrink-0"
         >
-          {hasError ? <Maximize2 className="size-4" aria-hidden /> : playingId === id ? <Pause className="size-4" aria-hidden /> : <Play className="size-4" aria-hidden />}
+          {hasError ? (
+            <Maximize2 className="size-4" aria-hidden />
+          ) : playingId === id ? (
+            <Pause className="size-4" aria-hidden />
+          ) : (
+            <Play className="size-4" aria-hidden />
+          )}
         </IconButton>
 
-        <div className="flex flex-1 items-center gap-2 touch-none select-none">
-          <span className="w-14 truncate text-right text-[0.7rem] font-medium text-muted">{formatMs(currentTime)}</span>
+        <div className="flex flex-1 touch-none items-center gap-2 select-none">
+          <span className="w-14 truncate text-right text-[0.7rem] font-medium text-muted">
+            {formatMs(currentTime)}
+          </span>
           <div
             className="relative h-1.5 flex-1 cursor-pointer overflow-hidden rounded-full bg-surface-2"
             onClick={handleSeek}
@@ -181,16 +197,28 @@ export function VoicePlayer({
               }
               if (e.key === "ArrowRight") {
                 const el = audioRef.current;
-                if (el) el.currentTime = Math.min(el.duration, el.currentTime + 5);
+                if (el)
+                  el.currentTime = Math.min(el.duration, el.currentTime + 5);
               }
             }}
           >
-            <div className="absolute left-0 top-0 h-full rounded-full" style={{ width: barWidth, backgroundColor: hasError ? "var(--danger)" : "var(--brand)" }} />
+            <div
+              className="absolute top-0 left-0 h-full rounded-full"
+              style={{
+                width: barWidth,
+                backgroundColor: hasError ? "var(--danger)" : "var(--brand)",
+              }}
+            />
             {duration > 0 && (
-              <div className="absolute top-1/2 -translate-y-1/2 h-4 w-4 -translate-x-1/2 rounded-full border border-current bg-surface shadow-sm" style={{ left: barWidth }} />
+              <div
+                className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-current bg-surface shadow-sm"
+                style={{ left: barWidth }}
+              />
             )}
           </div>
-          <span className="w-14 text-left text-[0.7rem] font-medium text-muted">{formatMs(duration)}</span>
+          <span className="w-14 text-left text-[0.7rem] font-medium text-muted">
+            {formatMs(duration)}
+          </span>
         </div>
 
         <div className="flex flex-none items-center gap-1">
@@ -208,7 +236,8 @@ export function VoicePlayer({
             variant="soft"
             onClick={() => {
               const el = audioRef.current;
-              if (el) el.currentTime = Math.min(el.duration, el.currentTime + 10);
+              if (el)
+                el.currentTime = Math.min(el.duration, el.currentTime + 10);
             }}
             aria-label={t("skipForward")}
           >
@@ -220,28 +249,45 @@ export function VoicePlayer({
             onClick={toggleMute}
             aria-label={muted ? t("unmute") : t("mute")}
           >
-            {muted ? <VolumeX className="size-4" aria-hidden /> : <Volume2 className="size-4" aria-hidden />}
+            {muted ? (
+              <VolumeX className="size-4" aria-hidden />
+            ) : (
+              <Volume2 className="size-4" aria-hidden />
+            )}
           </IconButton>
         </div>
       </div>
 
       <div className="mt-1 flex items-center justify-between gap-2 px-1">
-        <VoiceWaveform data={waveformData} positionMs={currentTime} durationMs={duration} playing={playingId === id} />
+        <VoiceWaveform
+          data={waveformData}
+          positionMs={currentTime}
+          durationMs={duration}
+          playing={playingId === id}
+        />
         <div className="flex flex-none items-center gap-1">
-          <span className="text-[0.65rem] uppercase tracking-wider text-muted">{formatMs(duration)}</span>
+          <span className="text-[0.65rem] tracking-wider text-muted uppercase">
+            {formatMs(duration)}
+          </span>
           <select
             className="voice-rate"
             value={rate}
             onChange={handleRateChange}
             aria-label={t("playbackSpeed")}
           >
-            {PLAYBACK_RATES.map((r) => <option key={r} value={r}>{r}×</option>)}
+            {PLAYBACK_RATES.map((r) => (
+              <option key={r} value={r}>
+                {r}×
+              </option>
+            ))}
           </select>
         </div>
       </div>
 
       {hasError ? (
-        <p className="mt-1 text-center text-[0.7rem] text-danger">{t("playbackFailed")}</p>
+        <p className="mt-1 text-center text-[0.7rem] text-danger">
+          {t("playbackFailed")}
+        </p>
       ) : null}
     </div>
   );

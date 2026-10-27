@@ -98,9 +98,13 @@ export async function uploadVoiceBlob(
       reject(new Error("voice upload cancelled"));
     });
 
-    signal?.addEventListener("abort", () => {
-      xhr.abort();
-    }, { once: true });
+    signal?.addEventListener(
+      "abort",
+      () => {
+        xhr.abort();
+      },
+      { once: true },
+    );
 
     xhr.open("PUT", signed.signedUrl, true);
     xhr.setRequestHeader("Content-Type", mimeType);
@@ -137,7 +141,9 @@ export async function signedVoiceUrl(
 export function formatVoiceDuration(ms: number): string {
   if (!Number.isFinite(ms) || ms <= 0) return "0:00";
   const m = Math.floor(ms / 60000);
-  const s = Math.floor((ms % 60000) / 1000).toString().padStart(2, "0");
+  const s = Math.floor((ms % 60000) / 1000)
+    .toString()
+    .padStart(2, "0");
   return `${m}:${s}`;
 }
 
