@@ -23,7 +23,7 @@ create or replace function public.create_post(
   p_media_mime text default null,
   p_media_size bigint default null,
   p_media_width int default null
-) returns string
+) returns text
 language plpgsql
 security definer
 set search_path = public, pg_temp
