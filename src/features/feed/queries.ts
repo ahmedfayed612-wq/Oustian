@@ -81,7 +81,7 @@ async function hydrateFeedPosts(
       supabase
         .from("post_media")
         .select(
-          "id, post_id, storage_key, thumbnail_key, mime_type, width, height, thumb_width, thumb_height, alt_text, display_order",
+          "id, post_id, storage_key, mime_type, width, height, alt_text, display_order",
         )
         .in("post_id", postIds)
         .order("display_order", { ascending: true }),

@@ -1,134 +1,37 @@
 "use server";
 
 import { requireApprovedMember } from "@/features/auth/session";
-import {
-  buildMediaKey,
-  buildStoryMediaKey,
-  isAcceptedImageMime,
-  isAcceptedStoryMime,
-  POST_MEDIA_BUCKET,
-  STORY_MEDIA_BUCKET,
-  type AcceptedImageMime,
-} from "./limits.ts";
+import { POST_MEDIA_BUCKET, buildMediaKey, isAcceptedImageMime } from "./limits";
 import { createClient } from "@/lib/supabase/server";
 
-export type MediaUploadTicket =
-  | { ok: true; path: string; token: string; bucket: string }
-  | { ok: false; code: string };
-
-/**
- * Which bucket an upload belongs to. Both are private and share the same
- * object layout (`<user_id>/<uuid>.<ext>`); they differ in who may read the
- * result (storage policies) and in what they accept: a post is a photo, a
- * story is a photo or a clip.
- */
-export type MediaUploadPurpose = "post" | "story";
-
-/**
- * Signed upload tickets for one post photo: the processed full-resolution
- * WebP and its WebP thumbnail. Both objects land in the private `post-media`
- * bucket under the caller's own `<user_id>/<uuid>.webp` folder, so the client
- * can never choose where its bytes live. The composer uploads full + thumbnail
- * in parallel and only commits to the database once both objects are stored.
- */
-export type PostMediaTickets =
-  | {
-      ok: true;
-      full: { path: string; token: string; bucket: string };
-      thumb: { path: string; token: string; bucket: string };
-    }
-  | { ok: false; code: string };
-
-export async function createPostMediaTicketsAction(): Promise<PostMediaTickets> {
-  const viewer = await requireApprovedMember();
-
-  const fullPath = buildMediaKey(viewer.id, "image/webp");
-  const thumbPath = buildMediaKey(viewer.id, "image/webp");
-
-  if (!fullPath || !thumbPath) {
-    return { ok: false, code: "photo_wrong_type" };
-  }
-
-  const bucket = POST_MEDIA_BUCKET;
-  const supabase = await createClient();
-
-  const [fullResult, thumbResult] = await Promise.all([
-    supabase.storage.from(bucket).createSignedUploadUrl(fullPath),
-    supabase.storage.from(bucket).createSignedUploadUrl(thumbPath),
-  ]);
-
-  if (fullResult.error || !fullResult.data) {
-    console.error(
-      "[media] could not create signed upload url for full photo",
-      fullResult.error?.message,
-    );
-    return { ok: false, code: "photo_unreadable" };
-  }
-  if (thumbResult.error || !thumbResult.data) {
-    console.error(
-      "[media] could not create signed upload url for thumbnail",
-      thumbResult.error?.message,
-    );
-    return { ok: false, code: "photo_unreadable" };
-  }
-
-  return {
-    ok: true,
-    full: { path: fullPath, token: fullResult.data.token, bucket },
-    thumb: { path: thumbPath, token: thumbResult.data.token, bucket },
-  };
-}
-
-/**
- * Mints a signed upload URL for media directly to Supabase Storage.
- * The browser uploads directly without traversing Next.js server payload
- * bounds (~4.5 MB). The key is built here from the authenticated member's id
- * and the type we intend to store, so the client never chooses where its bytes
- * land — and the bytes themselves are re-checked server-side on publish.
- */
+/** Mints a signed upload URL for media directly to Supabase Storage. The browser
+ * uploads directly (~4.5 MB is bypassed), the key is built server-side from the
+ * authenticated member, and the stored bytes are re-checked on publish. */
 export async function createMediaUploadTicketAction(
   mime: string,
-  purpose: MediaUploadPurpose = "post",
-): Promise<MediaUploadTicket> {
+  purpose: "post",
+): Promise<
+  | { ok: true; path: string; token: string; bucket: string }
+  | { ok: false; code: string }
+> {
+  if (purpose !== "post") return { ok: false, code: "invalid_purpose" };
+
   const viewer = await requireApprovedMember();
-
-  const path =
-    purpose === "story"
-      ? storyKeyFor(viewer.id, mime)
-      : postKeyFor(viewer.id, mime);
-
+  const path = buildMediaKey(viewer.id, mime);
   if (!path) return { ok: false, code: "photo_wrong_type" };
 
-  const bucket = purpose === "story" ? STORY_MEDIA_BUCKET : POST_MEDIA_BUCKET;
-
   const supabase = await createClient();
-
   const { data, error } = await supabase.storage
-    .from(bucket)
+    .from(POST_MEDIA_BUCKET)
     .createSignedUploadUrl(path);
 
   if (error || !data) {
     console.error(
-      `[media] could not create signed upload url in ${bucket}`,
+      `[media] could not create signed upload url in ${POST_MEDIA_BUCKET}`,
       error?.message,
     );
     return { ok: false, code: "photo_unreadable" };
   }
 
-  return { ok: true, path, token: data.token, bucket };
+  return { ok: true, path, token: data.token, bucket: POST_MEDIA_BUCKET };
 }
-
-/** Posts and avatars are photos; a story takes photos and videos. */
-function postKeyFor(ownerId: string, mime: string): string | null {
-  if (!isAcceptedImageMime(mime)) return null;
-
-  return buildMediaKey(ownerId, mime as AcceptedImageMime);
-}
-
-function storyKeyFor(ownerId: string, mime: string): string | null {
-  if (!isAcceptedStoryMime(mime)) return null;
-
-  return buildStoryMediaKey(ownerId, mime);
-}
-
-
