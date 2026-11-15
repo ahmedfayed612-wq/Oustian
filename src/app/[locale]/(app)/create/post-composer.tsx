@@ -234,8 +234,7 @@ export function PostComposer({
       <SubmitButton pendingLabel={t("publishing")} disabled={!canPublish}>
         {t("publish")}
       </SubmitButton>
-    </div>
-  </>
-  );
+  </div>
 }
+
 
