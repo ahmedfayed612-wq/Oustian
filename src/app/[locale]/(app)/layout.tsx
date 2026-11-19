@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/server";
 import { signedStorageUrl } from "@/lib/supabase/storage";
 import { GlobalChatListener } from "@/features/chat/components/GlobalChatListener";
 
+export const dynamic = "force-dynamic";
+
 /**
  * The signed-in app.
  *

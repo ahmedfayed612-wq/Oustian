@@ -5,6 +5,8 @@ import { LocaleSwitcher } from "@/components/layout/LocaleSwitcher";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { getSessionState } from "@/features/auth/session";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Chrome for sign-in, sign-up and the holding screen: the OUST lockup over a
  * single centred card, with language and theme still switchable (a first-time
