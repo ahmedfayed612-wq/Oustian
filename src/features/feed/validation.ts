@@ -13,7 +13,7 @@ import { MAX_ALT_TEXT_LENGTH } from "@/features/media/limits";
 export const postSchema = z
   .object({
     body: z.string().trim().max(5000, "post_too_long").optional().default(""),
-    mediaKeys: z.array(z.string().trim().min(1)).max(MAX_MEDIA_PER_POST, "too_many_images").default([]),
+    mediaKey: z.string().trim().min(1).optional(),
     altText: z
       .string()
       .trim()
@@ -22,13 +22,12 @@ export const postSchema = z
       .default(""),
   })
   .refine(
-    (data) => (data.body.length > 0) || data.mediaKeys.length > 0,
+    (data) => (data.body && data.body.length > 0) || Boolean(data.mediaKey),
     {
       message: "post_required",
       path: ["body"],
     },
   );
-
 
 export const commentSchema = z.object({
   body: z

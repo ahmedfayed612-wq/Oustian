@@ -51,8 +51,8 @@ export const MAX_STORY_CAPTION_LENGTH = 280;
 export const STORY_TTL_HOURS = 24;
 
 
-/** Per-post media cap: the existing schema already supports more (a unique (post_id, display_order) on post_media). */
-export const MAX_MEDIA_PER_POST = 4;
+/** V1 publishes one photo per post; the schema already allows more later. */
+export const MAX_PHOTOS_PER_POST = 1;
 
 export const ACCEPTED_IMAGE_MIME = [
   "image/jpeg",
