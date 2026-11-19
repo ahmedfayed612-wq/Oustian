@@ -518,9 +518,6 @@ export type Database = {
           mime_type: string
           post_id: string
           storage_key: string
-          thumbnail_key: string | null
-          thumb_height: number | null
-          thumb_width: number | null
           width: number
         }
         Insert: {
@@ -534,9 +531,6 @@ export type Database = {
           mime_type: string
           post_id: string
           storage_key: string
-          thumbnail_key?: string | null
-          thumb_height?: number | null
-          thumb_width?: number | null
           width: number
         }
         Update: {
@@ -550,9 +544,6 @@ export type Database = {
           mime_type?: string
           post_id?: string
           storage_key?: string
-          thumbnail_key?: string | null
-          thumb_height?: number | null
-          thumb_width?: number | null
           width?: number
         }
         Relationships: [
@@ -1270,9 +1261,6 @@ export type Database = {
           p_media_mime?: string
           p_media_size?: number
           p_media_width?: number
-          p_media_thumbnail_key?: string
-          p_thumb_height?: number
-          p_thumb_width?: number
         }
         Returns: string
       }
